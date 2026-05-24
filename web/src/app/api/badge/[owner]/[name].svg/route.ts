@@ -51,11 +51,26 @@ async function tryLookup(owner: string, repoName: string): Promise<number | null
 }
 
 export async function GET(_: Request, { params }: { params: { owner: string; name: string } }) {
-  const repoName = resolveName(params.name);
+  const rawName = params.name;
+  const repoName = rawName.endsWith(".svg") ? rawName.slice(0, -4) : rawName;
+  const repoOwner = params.owner;
 
-  let score = await tryGetScore(params.owner, repoName);
+  let score = await tryGetScore(repoOwner, repoName);
   if (score == null) {
-    score = await tryLookup(params.owner, repoName);
+    score = await tryLookup(repoOwner, repoName);
+  }
+
+  if (rawName === "debug") {
+    const dbRepo = await getRepoByOwnerName(repoOwner, repoName);
+    const dbScore = dbRepo ? await getLatestScore(dbRepo.id) : null;
+    return NextResponse.json({
+      rawName,
+      repoName,
+      repoOwner,
+      dbRepo: dbRepo ? { id: dbRepo.id, name: dbRepo.name, owner: dbRepo.owner } : null,
+      dbScore: dbScore?.total_score ?? null,
+      returnedScore: score,
+    });
   }
 
   const svg = renderBadgeSvg(score);
