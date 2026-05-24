@@ -59,6 +59,17 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZN9571STPY" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-ZN9571STPY');
+            `,
+          }}
+        />
       </head>
       <body className="min-h-screen font-body antialiased">
         <div className="relative flex min-h-screen flex-col">
