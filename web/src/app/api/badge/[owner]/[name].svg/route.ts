@@ -50,17 +50,18 @@ async function tryLookup(owner: string, repoName: string): Promise<number | null
   }
 }
 
-export async function GET(_: Request, { params }: { params: { owner: string; name: string } }) {
+export async function GET(request: Request, { params }: { params: { owner: string; name: string } }) {
   const rawName = params.name;
   const repoName = rawName.endsWith(".svg") ? rawName.slice(0, -4) : rawName;
   const repoOwner = params.owner;
+  const isDebug = new URL(request.url).searchParams.has("debug");
 
   let score = await tryGetScore(repoOwner, repoName);
   if (score == null) {
     score = await tryLookup(repoOwner, repoName);
   }
 
-  if (rawName === "debug") {
+  if (isDebug) {
     const dbRepo = await getRepoByOwnerName(repoOwner, repoName);
     const dbScore = dbRepo ? await getLatestScore(dbRepo.id) : null;
     return NextResponse.json({
@@ -70,6 +71,8 @@ export async function GET(_: Request, { params }: { params: { owner: string; nam
       dbRepo: dbRepo ? { id: dbRepo.id, name: dbRepo.name, owner: dbRepo.owner } : null,
       dbScore: dbScore?.total_score ?? null,
       returnedScore: score,
+      paramsName: params.name,
+      paramsOwner: params.owner,
     });
   }
 
