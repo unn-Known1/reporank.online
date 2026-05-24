@@ -6,7 +6,7 @@ import { dedupe } from "@/lib/dedup";
 import { renderBadgeSvg } from "@/lib/badge/svg";
 
 function resolveName(name: string): string {
-  return name.endsWith(".svg") ? name.slice(0, -4) : name;
+  return name.replace(/\.svg$/i, "");
 }
 
 async function tryGetScore(owner: string, repoName: string): Promise<number | null> {
@@ -50,24 +50,21 @@ async function tryLookup(owner: string, repoName: string): Promise<number | null
   }
 }
 
-export async function GET(request: Request, { params }: { params: { owner: string; name: string } }) {
-  const rawName = params.name;
-  const repoName = rawName.replace(/\.svg$/, "");
-  const fullUrl = request.url;
-  const debug = Object.fromEntries(new URL(fullUrl).searchParams.entries());
+export async function GET(_: Request, { params }: { params: { owner: string; name: string } }) {
+  const repoName = resolveName(params.name);
 
-  let score: number | null = null;
-  let dbRepoInfo: Record<string, unknown> | null = null;
-  try {
-    const repo = await getRepoByOwnerName(params.owner, repoName);
-    if (repo) {
-      dbRepoInfo = { id: repo.id, name: repo.name, owner: repo.owner };
-      const dbScore = await getLatestScore(repo.id);
-      score = dbScore?.total_score ?? null;
-    }
-  } catch (e) {
-    return NextResponse.json({ error: String(e), rawName, repoName, fullUrl, debug });
+  let score = await tryGetScore(params.owner, repoName);
+  if (score == null) {
+    score = await tryLookup(params.owner, repoName);
   }
 
-  return NextResponse.json({ rawName, repoName, paramsOwner: params.owner, score: "returned " + score, dbRepoInfo, fullUrl, debug });
+  const svg = renderBadgeSvg(score);
+
+  return new NextResponse(svg, {
+    status: 200,
+    headers: {
+      "Content-Type": "image/svg+xml",
+      ...(score == null ? { "Cache-Control": "no-cache" } : { "Cache-Control": "public, max-age=3600" }),
+    },
+  });
 }

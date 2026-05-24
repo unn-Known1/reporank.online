@@ -90,9 +90,9 @@ describe('badge API endpoint', () => {
     mockGetRepo.mockResolvedValue({ id: 'repo-1', full_name: 'vercel/next.js' })
     mockGetScore.mockResolvedValue({ total_score: 85 })
 
-    const { GET } = await import('@/app/api/badge/[owner]/[name].svg/route')
-    const res = await GET(new Request('http://localhost/api/badge/vercel/next.js.svg'), {
-      params: { owner: 'vercel', name: 'next.js.svg' },
+    const { GET } = await import('@/app/api/badge/[owner]/[name]/route')
+    const res = await GET(new Request('http://localhost/api/badge/vercel/next.js'), {
+      params: { owner: 'vercel', name: 'next.js' },
     })
 
     expect(res.status).toBe(200)
@@ -104,9 +104,9 @@ describe('badge API endpoint', () => {
   it('returns 200 with fallback SVG for unknown repo', async () => {
     mockGetRepo.mockResolvedValue(null)
 
-    const { GET } = await import('@/app/api/badge/[owner]/[name].svg/route')
-    const res = await GET(new Request('http://localhost/api/badge/nobody/missing.svg'), {
-      params: { owner: 'nobody', name: 'missing.svg' },
+    const { GET } = await import('@/app/api/badge/[owner]/[name]/route')
+    const res = await GET(new Request('http://localhost/api/badge/nobody/missing'), {
+      params: { owner: 'nobody', name: 'missing' },
     })
 
     expect(res.status).toBe(200)
@@ -118,9 +118,9 @@ describe('badge API endpoint', () => {
     mockGetRepo.mockResolvedValue({ id: 'repo-1', full_name: 'vercel/next.js' })
     mockGetScore.mockResolvedValue({ total_score: 85 })
 
-    const { GET } = await import('@/app/api/badge/[owner]/[name].svg/route')
-    const res = await GET(new Request('http://localhost/api/badge/vercel/next.js.svg'), {
-      params: { owner: 'vercel', name: 'next.js.svg' },
+    const { GET } = await import('@/app/api/badge/[owner]/[name]/route')
+    const res = await GET(new Request('http://localhost/api/badge/vercel/next.js'), {
+      params: { owner: 'vercel', name: 'next.js' },
     })
 
     const cache = res.headers.get('cache-control') ?? ''
@@ -132,9 +132,9 @@ describe('badge API endpoint', () => {
     mockGetRepo.mockResolvedValue({ id: 'repo-1', full_name: 'vercel/next.js' })
     mockGetScore.mockResolvedValue(null)
 
-    const { GET } = await import('@/app/api/badge/[owner]/[name].svg/route')
-    const res = await GET(new Request('http://localhost/api/badge/vercel/next.js.svg'), {
-      params: { owner: 'vercel', name: 'next.js.svg' },
+    const { GET } = await import('@/app/api/badge/[owner]/[name]/route')
+    const res = await GET(new Request('http://localhost/api/badge/vercel/next.js'), {
+      params: { owner: 'vercel', name: 'next.js' },
     })
 
     const body = await res.text()
