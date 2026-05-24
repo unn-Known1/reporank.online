@@ -67,6 +67,27 @@ export async function getRecentRepos(limit = 100, offset = 0) {
   return data ?? [];
 }
 
+export async function getRelatedRepos(language: string | null, excludeOwner: string, excludeName: string, limit = 5) {
+  const supabase = supabaseAdmin();
+  let query = supabase
+    .from("repos")
+    .select("id, owner, name, full_name, description, language, stars, forks")
+    .not("last_fetched_at", "is", null)
+    .neq("owner", excludeOwner)
+    .neq("name", excludeName)
+    .order("stars", { ascending: false })
+    .limit(limit);
+  if (language) {
+    query = query.eq("language", language);
+  }
+  const { data, error } = await query;
+  if (error) {
+    console.warn("[db] getRelatedRepos:", error);
+    return [];
+  }
+  return data ?? [];
+}
+
 export async function getRecentReposCount(): Promise<number> {
   const supabase = supabaseAdmin();
   const { count, error } = await supabase

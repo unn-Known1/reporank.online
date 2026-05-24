@@ -23,6 +23,13 @@ const LABELS: Record<SubScoreKey, string> = {
   adoption: "Adoption",
 };
 
+const PRESETS: { name: string; weights: Record<SubScoreKey, number> }[] = [
+  { name: "Balanced", weights: { maintenance: 0.30, community: 0.25, security: 0.20, documentation: 0.15, adoption: 0.10 } },
+  { name: "Security-Focused", weights: { maintenance: 0.20, community: 0.15, security: 0.40, documentation: 0.15, adoption: 0.10 } },
+  { name: "Community-First", weights: { maintenance: 0.20, community: 0.40, security: 0.15, documentation: 0.10, adoption: 0.15 } },
+  { name: "Maintenance-Heavy", weights: { maintenance: 0.45, community: 0.20, security: 0.15, documentation: 0.12, adoption: 0.08 } },
+];
+
 type Props = {
   onWeightsChange: (weights: Record<SubScoreKey, number>) => void;
 };
@@ -120,8 +127,32 @@ export default function WeightCustomizer({ onWeightsChange }: Props) {
         </svg>
       </button>
 
-      <div className={`overflow-hidden transition-all duration-500 ${open ? "max-h-96 opacity-100" : "max-h-0 opacity-0"}`}>
-        <div className="mt-5 space-y-5">
+      <div className={`overflow-hidden transition-all duration-500 ${open ? "max-h-[30rem] opacity-100" : "max-h-0 opacity-0"}`}>
+        <div className="mt-5 space-y-4">
+          <div className="flex flex-wrap gap-1.5">
+            <span className="mr-1 self-center text-xs text-[var(--color-text-muted)]">Presets:</span>
+            {PRESETS.map((p) => {
+              const active = Object.entries(p.weights).every(([k, v]) => Math.abs(v - weights[k as SubScoreKey]) < 0.001);
+              return (
+                <button
+                  key={p.name}
+                  onClick={() => {
+                    setWeights(p.weights);
+                    storeWeights(p.weights);
+                    onChangeRef.current(p.weights);
+                  }}
+                  className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-all duration-200 ${
+                    active
+                      ? "bg-[var(--color-primary)] text-white"
+                      : "border border-[var(--color-border)] bg-[var(--color-surface-elevated)] text-[var(--color-text-muted)] hover:border-[var(--color-primary)]/30 hover:text-[var(--color-primary)]"
+                  }`}
+                >
+                  {p.name}
+                </button>
+              );
+            })}
+          </div>
+
           {(Object.keys(DEFAULT_WEIGHTS) as SubScoreKey[]).map((key) => {
             const pct = Math.round(weights[key] * 100);
             const isDefault = Math.abs(weights[key] - DEFAULT_WEIGHTS[key]) < 0.001;

@@ -10,6 +10,12 @@ import { SkeletonCard } from "@/components/Skeleton";
 import WatchlistButton from "@/components/WatchlistButton";
 import CompareCheckbox from "@/components/CompareCheckbox";
 import FocusScore from "@/components/FocusScore";
+import EvidenceFacts from "@/components/EvidenceFacts";
+import ImprovementSuggestions from "@/components/ImprovementSuggestions";
+import ShareButton from "@/components/ShareButton";
+import VisitorCounter from "@/components/VisitorCounter";
+import RepoJsonLd from "@/components/seo/RepoJsonLd";
+import RelatedRepos from "@/components/RelatedRepos";
 import { getRepoByOwnerName } from "@/lib/db/repos";
 import { getLatestScore } from "@/lib/db/scores";
 import { getAiReview } from "@/lib/db/ai";
@@ -48,17 +54,19 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const base = process.env.NEXT_PUBLIC_BASE_URL ?? "https://reporank.online";
   const repo = await getRepoByOwnerName(owner, name);
   const score = repo && await getLatestScore(repo.id).catch(() => null);
-  const scoreDesc = score != null
-    ? `scores ${Math.round(score.total_score)}/100 (grade ${getGrade(Math.round(score.total_score))})`
-    : "check the credibility score";
-  const description = `RepoRank: ${fullName} ${scoreDesc}. See health metrics, AI analysis, and human reviews.`;
+  const grade = score != null ? getGrade(Math.round(score.total_score)) : null;
+  const scoredPrefix = score != null ? `Score: ${Math.round(score.total_score)}/100 (${grade}) — ` : "";
+  const langDesc = repo?.language ? ` ${repo.language} repository` : " Repository";
+  const starDesc = repo ? ` ${repo.stars.toLocaleString()} stars` : "";
+  const title = `${fullName} — ${scoredPrefix}RepoRank`;
+  const description = `RepoRank: ${fullName} scores ${score != null ? Math.round(score.total_score) + "/100 (grade " + grade + ")" : "N/A"}.${langDesc}.${starDesc}. See automated health metrics, AI analysis, and human reviews.`;
   return {
-    title: `${fullName} — RepoRank`,
+    title,
     description,
     alternates: { canonical: `${base}/github/${owner}/${name}` },
     robots: { index: true, follow: true },
     openGraph: {
-      title: `${fullName} on RepoRank`,
+      title: `${fullName} — RepoRank`,
       description,
       type: "website",
       url: `${base}/github/${owner}/${name}`,
@@ -172,6 +180,17 @@ export default async function RepoPage({ params }: PageProps) {
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-10">
+      <RepoJsonLd
+        owner={repo.owner}
+        name={repo.name}
+        description={repo.description}
+        language={repo.language}
+        stars={repo.stars}
+        forks={repo.forks}
+        topics={repo.topics ?? []}
+        score={score?.total_score ?? null}
+        createdAt={repo.created_at}
+      />
       <Suspense fallback={null}><FocusScore /></Suspense>
       <div className="mb-6" id="score-section">
         <div className="flex items-center justify-between gap-4">
@@ -225,6 +244,8 @@ export default async function RepoPage({ params }: PageProps) {
         )}
       </div>
 
+      <EvidenceFacts repo={repo} />
+
       {score ? (
         <div className="mb-6">
           <ScoreWithWeights
@@ -233,6 +254,25 @@ export default async function RepoPage({ params }: PageProps) {
             computedAt={score.computed_at}
             repo={{ stars: repo.stars, forks: repo.forks, language: repo.language }}
           />
+          <div className="mt-3 flex items-center justify-between">
+            <ShareButton
+              owner={repo.owner}
+              name={repo.name}
+              score={score.total_score}
+              grade={await getGrade(Math.round(score.total_score))}
+            />
+            <VisitorCounter initialCount={0} />
+          </div>
+          {score.total_score < 70 && (
+            <ImprovementSuggestions
+              score={score.total_score}
+              subscores={score.subscores_json}
+              stars={repo.stars}
+              description={repo.description}
+              topics={repo.topics ?? []}
+              language={repo.language}
+            />
+          )}
         </div>
       ) : (
         <div className="mb-6 rounded-xl border border-dashed border-[var(--color-border)] p-8 text-center">
@@ -264,6 +304,10 @@ export default async function RepoPage({ params }: PageProps) {
         <h2 className="mb-3 font-display text-base font-semibold text-[var(--color-text)]">Badge</h2>
         <LazyBadgeExport owner={repo.owner} name={repo.name} />
       </div>
+
+      <Suspense fallback={null}>
+        <RelatedRepos language={repo.language} owner={repo.owner} name={repo.name} />
+      </Suspense>
 
       <div id="review-section" className="mt-8">
         <h2 className="mb-3 font-display text-base font-semibold text-[var(--color-text)]">
