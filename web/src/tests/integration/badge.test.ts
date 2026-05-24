@@ -101,7 +101,7 @@ describe('badge API endpoint', () => {
     expect(body).toContain('85')
   })
 
-  it('returns 404 for unknown repo', async () => {
+  it('returns 200 with fallback SVG for unknown repo', async () => {
     mockGetRepo.mockResolvedValue(null)
 
     const { GET } = await import('@/app/api/badge/[owner]/[name].svg/route')
@@ -109,7 +109,9 @@ describe('badge API endpoint', () => {
       params: { owner: 'nobody', name: 'missing.svg' },
     })
 
-    expect(res.status).toBe(404)
+    expect(res.status).toBe(200)
+    const body = await res.text()
+    expect(body).toContain('\u2014')
   })
 
   it('sets cache-control header', async () => {
