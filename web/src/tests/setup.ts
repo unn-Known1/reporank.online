@@ -1,0 +1,7 @@
+process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://localhost:54321'
+process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'mock-anon-key'
+process.env.SUPABASE_SERVICE_ROLE_KEY = 'mock-service-role-key'
+process.env.GITHUB_APP_TOKEN = 'mock-github-token'
+process.env.ANTHROPIC_API_KEY = 'mock-anthropic-key'
+process.env.GITHUB_ID = 'mock-gh-id'
+process.env.GITHUB_SECRET = 'mock-gh-secret'
