@@ -4,6 +4,7 @@ import BlogPostContent from "@/components/blog/BlogPostContent";
 import RepoReferenceCard from "@/components/blog/RepoReferenceCard";
 import AiGeneratedBadge from "@/components/blog/AiGeneratedBadge";
 import BlogJsonLd from "@/components/seo/BlogJsonLd";
+import SocialShare from "@/components/blog/SocialShare";
 import type { Metadata } from "next";
 import "@/styles/blog.css";
 
@@ -119,6 +120,12 @@ export default async function BlogPostPage({
             ))}
           </div>
         )}
+
+        <SocialShare
+          url={postUrl}
+          title={post.title}
+          description={post.excerpt ?? ""}
+        />
       </article>
     </div>
   );
