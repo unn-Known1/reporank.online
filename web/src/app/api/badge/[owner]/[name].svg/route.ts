@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { getRepoByOwnerName, upsertRepoFromGitHub } from "@/lib/db/repos";
 import { getLatestScore, computeAndStoreScore } from "@/lib/db/scores";
 import { maybeGenerateAiReview } from "@/lib/db/ai";
-import { getGitHubToken } from "@/lib/github/token";
 import { dedupe } from "@/lib/dedup";
 import { renderBadgeSvg } from "@/lib/badge/svg";
 
@@ -17,9 +16,24 @@ async function tryGetScore(owner: string, repoName: string): Promise<number | nu
   return score?.total_score ?? null;
 }
 
-async function tryLookup(owner: string, repoName: string): Promise<number | null> {
+async function tryGetBadgeToken(): Promise<string | null> {
   try {
-    const { token } = await getGitHubToken();
+    const { supabaseServer } = await import("@/lib/supabase/server");
+    const supabase = await supabaseServer();
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.provider_token) return session.provider_token;
+  } catch {}
+  try {
+    return process.env.GITHUB_APP_TOKEN ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function tryLookup(owner: string, repoName: string): Promise<number | null> {
+  const token = await tryGetBadgeToken();
+  if (!token) return null;
+  try {
     const result = await dedupe(`badge:${owner}/${repoName}`, () =>
       upsertRepoFromGitHub(owner, repoName, token)
     );
