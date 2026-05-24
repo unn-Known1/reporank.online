@@ -14,12 +14,11 @@ export async function GET(_: Request, { params }: { params: { owner: string; nam
     const errorSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="20" role="img" aria-label="RepoRank: not found">
   <rect width="60" height="20" fill="#555"/>
   <text x="30" y="14" text-anchor="middle" fill="#fff" font-size="11" font-family="Arial">REPORANK</text>
-  <rect x="60" width="60" height="20" fill="#e53e3e"/>
-  <text x="90" y="14" text-anchor="middle" fill="#fff" font-size="11" font-family="Arial">NOT FOUND</text>
+  <rect x="60" width="60" height="20" fill="#64748b"/>
+  <text x="90" y="14" text-anchor="middle" fill="#fff" font-size="11" font-family="Arial">—</text>
 </svg>`;
     return new NextResponse(errorSvg, {
       headers: { "Content-Type": "image/svg+xml", "Cache-Control": "no-cache" },
-      status: 404,
     });
   }
 

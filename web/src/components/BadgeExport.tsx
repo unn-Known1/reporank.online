@@ -12,6 +12,7 @@ export default function BadgeExport({ owner, name }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
   const [embedMarkdown, setEmbedMarkdown] = useState("");
+  const [badgeFailed, setBadgeFailed] = useState(false);
 
   const badgePath = `/api/badge/${owner}/${name}.svg`;
 
@@ -37,12 +38,16 @@ export default function BadgeExport({ owner, name }: Props) {
     <div className="relative overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 shadow-sm">
       <div className="relative mb-4 flex flex-wrap items-center gap-4">
         <div className="flex items-center gap-3 rounded-lg bg-[var(--color-surface-elevated)] p-3 border border-[var(--color-border)]">
-          <img
-            src={badgePath}
-            alt="RepoRank badge"
-            className="h-6"
-            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-          />
+          {badgeFailed ? (
+            <span className="text-xs text-[var(--color-text-muted)]">Badge unavailable</span>
+          ) : (
+            <img
+              src={badgePath}
+              alt="RepoRank badge"
+              className="h-6"
+              onError={() => setBadgeFailed(true)}
+            />
+          )}
         </div>
         <span className="text-sm text-[var(--color-text-secondary)]">
           Add this badge to your README to show RepoRank credibility

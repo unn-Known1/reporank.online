@@ -15,6 +15,13 @@ export const metadata: Metadata = {
   description:
     "Repository credibility scores: automated health metrics + AI analysis + human reviews.",
   icons: [{ rel: "icon", url: "/favicon.svg" }],
+  openGraph: {
+    images: [{ url: "/api/og/repo/default", width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: [{ url: "/api/og/repo/default", width: 1200, height: 630 }],
+  },
 };
 
 const themeScript = `

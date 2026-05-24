@@ -127,7 +127,7 @@ export default function ReviewForm({ repoId, owner, name }: { repoId: string; ow
 
       <div className="mt-6 flex items-center justify-between">
         <p className="text-xs text-[var(--color-text-muted)]">
-          {ratingCount > 0 ? `${ratingCount} dimension${ratingCount > 1 ? "s" : ""} rated` : "Rate at least one dimension"}
+          {ratingCount > 0 ? `${ratingCount} dimension${ratingCount > 1 ? "s" : ""} rated` : ""}
         </p>
         <button
           type="submit"

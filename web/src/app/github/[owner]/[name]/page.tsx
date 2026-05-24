@@ -62,11 +62,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description,
       type: "website",
       url: `${base}/github/${owner}/${name}`,
+      images: [{ url: `${base}/api/og/repo/${owner}/${name}`, width: 1200, height: 630 }],
     },
     twitter: {
-      card: "summary",
+      card: "summary_large_image",
       title: `${fullName} — RepoRank`,
       description,
+      images: [{ url: `${base}/api/og/repo/${owner}/${name}`, width: 1200, height: 630 }],
     },
   };
 }
@@ -174,8 +176,15 @@ export default async function RepoPage({ params }: PageProps) {
       <div className="mb-6" id="score-section">
         <div className="flex items-center justify-between gap-4">
           <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-[var(--color-text)]">
-            <span className="text-[var(--color-text-muted)]">{repo.owner}/</span>
-            <span>{repo.name}</span>
+            <a
+              href={`https://github.com/${repo.owner}/${repo.name}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:opacity-80 transition-opacity"
+            >
+              <span className="text-[var(--color-text-muted)]">{repo.owner}/</span>
+              <span>{repo.name}</span>
+            </a>
           </h1>
           <div className="flex items-center gap-3">
             <CompareCheckbox owner={repo.owner} name={repo.name} />

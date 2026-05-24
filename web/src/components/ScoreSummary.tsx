@@ -34,9 +34,9 @@ const DEFAULT_WEIGHTS: Record<SubScoreKey, number> = {
 };
 
 function getScoreInfo(score: number) {
-  if (score >= 70) {
+  if (score >= 85) {
     return {
-      label: "Strong",
+      label: "Excellent",
       gradient: "from-emerald-400 to-cyan-400",
       accent: "text-emerald-600 dark:text-emerald-400",
       bgAccent: "bg-emerald-50 dark:bg-emerald-500/10",
@@ -45,9 +45,31 @@ function getScoreInfo(score: number) {
       gradientTo: "#06b6d4",
     };
   }
-  if (score >= 40) {
+  if (score >= 70) {
     return {
-      label: "Moderate",
+      label: "Good",
+      gradient: "from-emerald-400 to-cyan-400",
+      accent: "text-emerald-600 dark:text-emerald-400",
+      bgAccent: "bg-emerald-50 dark:bg-emerald-500/10",
+      borderAccent: "border-emerald-200 dark:border-emerald-500/30",
+      gradientFrom: "#34d399",
+      gradientTo: "#06b6d4",
+    };
+  }
+  if (score >= 50) {
+    return {
+      label: "Fair",
+      gradient: "from-amber-400 to-orange-400",
+      accent: "text-amber-600 dark:text-amber-400",
+      bgAccent: "bg-amber-50 dark:bg-amber-500/10",
+      borderAccent: "border-amber-200 dark:border-amber-500/30",
+      gradientFrom: "#fbbf24",
+      gradientTo: "#f97316",
+    };
+  }
+  if (score >= 30) {
+    return {
+      label: "Weak",
       gradient: "from-amber-400 to-orange-400",
       accent: "text-amber-600 dark:text-amber-400",
       bgAccent: "bg-amber-50 dark:bg-amber-500/10",
@@ -57,7 +79,7 @@ function getScoreInfo(score: number) {
     };
   }
   return {
-    label: "Needs Work",
+    label: "Poor",
     gradient: "from-rose-400 to-red-400",
     accent: "text-rose-600 dark:text-rose-400",
     bgAccent: "bg-rose-50 dark:bg-rose-500/10",
@@ -98,7 +120,16 @@ const SubScoreItem = React.memo(function SubScoreItem({
   index: number;
   revealed: boolean;
 }) {
-  const info = getScoreInfo(value);
+  const isUnscored = value === 0;
+  const info = isUnscored ? {
+    label: "Unscored",
+    gradient: "from-slate-400 to-slate-500",
+    accent: "text-[var(--color-text-muted)]",
+    bgAccent: "bg-[var(--color-surface)]",
+    borderAccent: "border-[var(--color-border)]",
+    gradientFrom: "#94a3b8",
+    gradientTo: "#64748b",
+  } : getScoreInfo(value);
 
   return (
     <div
@@ -108,13 +139,14 @@ const SubScoreItem = React.memo(function SubScoreItem({
         transform: revealed ? "translateY(0)" : "translateY(8px)",
         transitionDelay: `${200 + index * 80}ms`,
       }}
+      title={isUnscored ? "No data available for this metric" : `${keyName}: ${value}/100 — ${info.label}`}
     >
       <div className="flex items-center justify-between">
         <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
           {keyName}
         </span>
         <span className={`font-display text-xl font-bold whitespace-nowrap ${info.accent}`}>
-          {value}
+          {isUnscored ? <span className="opacity-40">&mdash;</span> : value}
         </span>
       </div>
 
@@ -146,13 +178,7 @@ export default function ScoreSummary({
   repo,
 }: Props) {
   const hasCustomWeights = weights !== null && weights !== undefined;
-  const [animatedScore, setAnimatedScore] = useState(0);
-  const [revealed, setRevealed] = useState(false);
   const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   let displayTotal = total;
   if (hasCustomWeights || total === 0) {
@@ -166,12 +192,19 @@ export default function ScoreSummary({
     );
   }
 
+  const [animatedScore, setAnimatedScore] = useState(displayTotal);
+  const [revealed, setRevealed] = useState(true);
+
   const scoreInfo = getScoreInfo(displayTotal);
   const gradeInfo = getGrade(displayTotal);
 
   useEffect(() => {
-    setRevealed(false);
+    setMounted(true);
     setAnimatedScore(0);
+    setRevealed(false);
+  }, []);
+
+  useEffect(() => {
     const target = displayTotal;
     const duration = 1200;
     const startTime = performance.now();
