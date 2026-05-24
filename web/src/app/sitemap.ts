@@ -1,4 +1,5 @@
 import { getRecentRepos, getRecentReposCount } from "@/lib/db/repos";
+import { getBlogSitemapEntries } from "@/lib/blog/sitemap";
 import type { MetadataRoute } from "next";
 
 const SITEMAP_SIZE = 5000;
@@ -28,9 +29,12 @@ export default async function sitemap({
     }));
 
   if (id === 0) {
+    const blogEntries = await getBlogSitemapEntries();
     return [
       { url: base, lastModified: new Date(), changeFrequency: "daily", priority: 1.0 },
       { url: `${base}/faq`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.5 },
+      { url: `${base}/blog`, lastModified: new Date(), changeFrequency: "daily", priority: 0.9 },
+      ...blogEntries,
       ...repoUrls,
     ];
   }

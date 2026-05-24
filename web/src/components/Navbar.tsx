@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import AuthButton from "@/components/AuthButton";
+import BlogNavTab from "@/components/blog/BlogNavTab";
 
 function parseRepoInput(input: string): { owner: string; name: string } | null {
   let trimmed = input.trim();
@@ -134,6 +135,7 @@ export default function Navbar() {
         <div className="flex-1 sm:hidden" />
 
         <div className="flex items-center gap-2">
+          <BlogNavTab />
           <ThemeToggle />
           <div className="hidden sm:block">
             <AuthButton />
@@ -174,6 +176,9 @@ export default function Navbar() {
               />
             </div>
           </form>
+          <a href="/blog" className="block rounded-lg px-3 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)] transition-colors mb-2">
+            Blog
+          </a>
           <div className="flex items-center justify-between">
             {mounted && <AuthButton />}
             <span className="text-xs text-[var(--color-text-muted)] font-mono">v1.0.0</span>
