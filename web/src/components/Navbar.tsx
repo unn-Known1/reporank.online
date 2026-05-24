@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import AuthButton from "@/components/AuthButton";
 import BlogNavTab from "@/components/blog/BlogNavTab";
+import ExtensionNavTab from "@/components/extension/ExtensionNavTab";
 
 function parseRepoInput(input: string): { owner: string; name: string } | null {
   let trimmed = input.trim();
@@ -136,6 +137,7 @@ export default function Navbar() {
 
         <div className="flex items-center gap-2">
           <BlogNavTab />
+          <ExtensionNavTab />
           <ThemeToggle />
           <div className="hidden sm:block">
             <AuthButton />
