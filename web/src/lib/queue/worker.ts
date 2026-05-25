@@ -3,6 +3,7 @@ import { getRedis } from './redis'
 import { upsertRepoFromGitHub } from '@/lib/db/repos'
 import { computeAndStoreScore } from '@/lib/db/scores'
 import { maybeGenerateAiReview } from '@/lib/db/ai'
+import { getUserTokenFromSession } from '@/lib/github/token'
 import type { RepoScoringJob } from './index'
 
 export function createScoringWorker(): Worker<RepoScoringJob> | null {
@@ -10,20 +11,25 @@ export function createScoringWorker(): Worker<RepoScoringJob> | null {
     const worker = new Worker<RepoScoringJob>(
       'repo-scoring',
       async (job) => {
-        const { owner, name, token } = job.data
+        const { owner, name, triggeredByUserId } = job.data
+
+        let userToken: string | undefined
+        if (triggeredByUserId) {
+          userToken = await getUserTokenFromSession(triggeredByUserId) ?? undefined
+        }
 
         await job.updateProgress(10)
-        const { dbRepo, rawRepo } = await upsertRepoFromGitHub(owner, name, token)
+        const { dbRepo, rawRepo } = await upsertRepoFromGitHub(owner, name, userToken)
 
         if (!dbRepo) {
           throw new Error(`Failed to upsert repo ${owner}/${name}`)
         }
 
         await job.updateProgress(50)
-        await computeAndStoreScore(dbRepo.id, rawRepo)
+        await computeAndStoreScore(dbRepo.id, rawRepo, owner, name)
 
         await job.updateProgress(75)
-        await maybeGenerateAiReview(dbRepo.id, owner, name, { rawRepo, token })
+        await maybeGenerateAiReview(dbRepo.id, owner, name, { rawRepo })
 
         await job.updateProgress(100)
         return { repoId: dbRepo.id }

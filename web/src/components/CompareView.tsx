@@ -37,9 +37,10 @@ export default function CompareView() {
   const [error, setError] = useState<string | null>(null);
 
   const compareParam = searchParams.get("compare") ?? "";
-  const fullNames = compareParam.split(",").filter(Boolean);
 
   useEffect(() => {
+    const fullNames = compareParam.split(",").filter(Boolean);
+
     if (fullNames.length < 2) {
       setError("Select at least 2 repos to compare.");
       setLoading(false);

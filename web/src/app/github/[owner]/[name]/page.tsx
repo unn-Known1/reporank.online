@@ -25,6 +25,7 @@ import { getAiReview } from "@/lib/db/ai";
 import { getReviewSummary, getReviewsByRepo } from "@/lib/db/reviews";
 import { getWatchlistItem } from "@/lib/db/watchlist";
 import { supabaseServer } from "@/lib/supabase/server";
+import { getGitHubToken } from "@/lib/github/token";
 import type { SubScores } from "@reporank/core";
 
 const LazyScoreHistoryChart = dynamic(
@@ -182,6 +183,8 @@ export default async function RepoPage({ params }: PageProps) {
   const supabase = await supabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
   const currentUserGitHubUsername = user?.user_metadata?.user_name as string | undefined;
+  const { isUserToken } = await getGitHubToken();
+  const tokenSource = isUserToken ? "user" : "app";
 
   const repo = await getRepoByOwnerName(owner, name);
   if (!repo) return notFound();
@@ -315,6 +318,7 @@ export default async function RepoPage({ params }: PageProps) {
             total={score.total_score}
             subscores={score.subscores_json}
             computedAt={score.computed_at}
+            tokenSource={tokenSource}
             repo={{ stars: repo.stars, forks: repo.forks, language: repo.language }}
           />
           <div className="mt-3 flex items-center justify-between">

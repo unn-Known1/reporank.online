@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useMemo, useRef } from "react";
+import Image from "next/image";
 
 type ReviewRow = {
   id: string;
@@ -175,10 +176,13 @@ export default function ReviewsList({ reviews, userId }: Props) {
         >
           <div className="relative flex items-center gap-3">
             {review.user?.avatar_url && (
-              <img
+              <Image
                 src={review.user.avatar_url}
                 alt={review.user.username ?? ""}
+                width={36}
+                height={36}
                 className="h-9 w-9 rounded-lg"
+                unoptimized
               />
             )}
             <div className="flex items-center gap-2">

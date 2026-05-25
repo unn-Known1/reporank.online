@@ -1,5 +1,6 @@
 import { REPO_FACTORS_QUERY } from "./queries";
 import { withRetry } from "@/lib/retry";
+import { GitHubApiError } from "./errors";
 
 async function fetchGraphQL(owner: string, name: string, token: string) {
   const since6mo = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString();
@@ -18,16 +19,18 @@ async function fetchGraphQL(owner: string, name: string, token: string) {
 
   if (res.status === 429) {
     const retryAfter = parseInt(res.headers.get("retry-after") ?? "5", 10);
-    throw Object.assign(new Error(`GitHub rate limited`), {
-      status: 429,
-      retryAfterSec: retryAfter,
-    });
+    throw new GitHubApiError("GitHub rate limited", 429, { retryAfterSec: retryAfter });
   }
 
   if (!res.ok) {
     const txt = await res.text();
     throw new Error(`GitHub GraphQL failed: ${res.status} ${txt}`);
   }
+
+  // Attach rate limit metadata to response for upstream logging
+  const rateLimitRemaining = parseInt(res.headers.get("x-ratelimit-remaining") ?? "5000", 10);
+  const rateLimitReset = parseInt(res.headers.get("x-ratelimit-reset") ?? "0", 10);
+  (res as any).__rateLimit = { remaining: rateLimitRemaining, resetAt: rateLimitReset };
 
   return res;
 }
@@ -38,14 +41,23 @@ export async function fetchRepoFactors(owner: string, name: string, token: strin
     baseDelayMs: 2000,
   });
 
-  const contentLength = res.headers.get("content-length");
-  if (contentLength && parseInt(contentLength, 10) > 5 * 1024 * 1024) {
+  const MAX_RESPONSE_SIZE = 5 * 1024 * 1024;
+
+  const text = await res.text();
+  if (text.length > MAX_RESPONSE_SIZE) {
     throw new Error(
-      `GitHub GraphQL response too large: ${contentLength} bytes`
+      `GitHub GraphQL response too large: ${text.length} bytes`
     );
   }
 
-  const json = await res.json();
+  const rateLimit = (res as any).__rateLimit;
+  if (rateLimit) {
+    console.log(
+      `[github] GraphQL fetch for ${owner}/${name}: quota remaining=${rateLimit.remaining}, resetAt=${rateLimit.resetAt}`
+    );
+  }
+
+  const json = JSON.parse(text);
 
   if (json.errors?.length) {
     const fatalTypes = new Set(["NOT_FOUND", "FORBIDDEN", "UNAUTHORIZED", "MAX_NODE_LIMIT_EXCEEDED"]);
@@ -55,10 +67,7 @@ export async function fetchRepoFactors(owner: string, name: string, token: strin
     const hasData = json.data?.repository != null;
 
     if (hasFatal || !hasData) {
-      throw Object.assign(
-        new Error(`GitHub GraphQL failed: ${JSON.stringify(json.errors)}`),
-        { retryable: false }
-      );
+      throw new GitHubApiError(`GitHub GraphQL failed: ${JSON.stringify(json.errors)}`, 422, { retryable: false });
     }
 
     console.warn(

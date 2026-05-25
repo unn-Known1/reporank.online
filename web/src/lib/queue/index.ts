@@ -1,10 +1,12 @@
 import { Queue } from 'bullmq'
 import { getRedisUrl, getRedis } from './redis'
 
+// SECURITY: Do NOT add a token field here. Raw OAuth tokens must never be stored in Redis.
+// The synchronous fallback path passes the token in-memory only.
+// If the worker needs a user token, fetch from session at execution time via triggeredByUserId.
 export type RepoScoringJob = {
   owner: string
   name: string
-  token?: string
   triggeredByUserId?: string
 }
 

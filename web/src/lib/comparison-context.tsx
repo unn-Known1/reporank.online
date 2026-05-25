@@ -40,7 +40,16 @@ function ComparisonProviderInner({ children }: { children: ReactNode }) {
   const [selectedRepos, setSelectedRepos] = useState<RepoSelection[]>(parseFromUrl);
 
   useEffect(() => {
-    setSelectedRepos(parseFromUrl());
+    const compare = searchParams.get("compare");
+    if (!compare) {
+      setSelectedRepos([]);
+      return;
+    }
+    const repos = compare.split(",").map((full) => {
+      const [owner, name] = full.split("/");
+      return { owner, name, fullName: full };
+    }).filter((r) => r.owner && r.name);
+    setSelectedRepos(repos);
   }, [searchParams]);
 
   const updateUrl = useCallback((repos: RepoSelection[]) => {

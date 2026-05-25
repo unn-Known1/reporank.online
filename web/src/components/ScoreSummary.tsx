@@ -11,6 +11,7 @@ type Props = {
   subscores: Record<string, number>;
   weights?: Partial<Record<SubScoreKey, number>> | null;
   computedAt?: string | null;
+  tokenSource?: "user" | "app";
   repo?: {
     stars: number;
     forks: number;
@@ -164,6 +165,7 @@ export default function ScoreSummary({
   subscores,
   weights,
   computedAt,
+  tokenSource,
   repo,
 }: Props) {
   const hasCustomWeights = weights !== null && weights !== undefined;
@@ -343,6 +345,17 @@ export default function ScoreSummary({
                         </span>
                       );
                     })()}
+                    {tokenSource === "user" && (
+                      <span
+                        className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400"
+                        title="This score was computed using your GitHub API quota"
+                      >
+                        <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                        </svg>
+                        Your quota
+                      </span>
+                    )}
                   </div>
                 )}
 

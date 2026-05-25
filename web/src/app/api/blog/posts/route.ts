@@ -1,11 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { listBlogPosts, getBlogPostBySlug, createBlogPost } from "@/lib/blog/service";
 import { getUser } from "@/lib/supabase/server";
+import { checkRateLimit } from "@/lib/ratelimit";
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const slug = searchParams.get("slug");
   const includeDrafts = searchParams.get("include_drafts") === "true";
+
+  if (includeDrafts) {
+    const user = await getUser();
+    if (!user) {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+    }
+  }
 
   if (slug) {
     const post = await getBlogPostBySlug(slug);
@@ -30,6 +40,15 @@ export async function POST(request: NextRequest) {
   const user = await getUser();
   if (!user) {
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
+  }
+
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const { allowed, retryAfterMs } = await checkRateLimit(ip, "blog:");
+  if (!allowed) {
+    return NextResponse.json(
+      { error: "Too many requests" },
+      { status: 429, headers: { "Retry-After": String(Math.ceil(retryAfterMs / 1000)) } }
+    );
   }
 
   const body = await request.json();

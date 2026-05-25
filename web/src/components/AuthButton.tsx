@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
 type User = { id: string; email?: string; user_metadata?: { user_name?: string; avatar_url?: string } };
@@ -39,7 +40,7 @@ export default function AuthButton() {
     const redirectTo = `${window.location.origin}/auth/callback`;
     await supabase.auth.signInWithOAuth({
       provider: "github",
-      options: { redirectTo, scopes: "read:user" },
+      options: { redirectTo, scopes: "read:user public_repo" },
     });
     setLoading(false);
   };
@@ -63,11 +64,14 @@ export default function AuthButton() {
         >
           {avatarUrl ? (
             <div className="relative">
-              <img
+              <Image
                 src={avatarUrl}
                 alt=""
+                width={28}
+                height={28}
                 className="h-7 w-7 rounded-lg"
                 onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                unoptimized
               />
               <div className="absolute -right-0.5 -bottom-0.5 h-2 w-2 rounded-full border-2 border-[var(--color-surface)] bg-emerald-500" />
             </div>

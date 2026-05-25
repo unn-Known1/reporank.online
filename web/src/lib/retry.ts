@@ -22,7 +22,10 @@ export async function withRetry<T>(
       lastError = err
       if ((err as any)?.retryable === false) throw err
       if (attempt < maxAttempts) {
-        const delay = jitter(baseDelayMs * Math.pow(2, attempt - 1))
+        const retryAfterSec = (err as any)?.retryAfterSec
+        const delay = retryAfterSec
+          ? retryAfterSec * 1000 + jitter(1000)
+          : jitter(baseDelayMs * Math.pow(2, attempt - 1))
         await sleep(delay)
       }
     }

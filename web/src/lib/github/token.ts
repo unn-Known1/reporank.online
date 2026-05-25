@@ -1,4 +1,5 @@
 import { supabaseServer } from '@/lib/supabase/server'
+import { supabaseAdmin } from '@/lib/supabase/admin'
 import { requireEnv } from '@/lib/env'
 
 // SECURITY: provider_token is a short-lived OAuth token scoped to this session.
@@ -17,4 +18,27 @@ export async function getGitHubToken(): Promise<{ token: string; isUserToken: bo
   }
 
   return { token: requireEnv('GITHUB_APP_TOKEN'), isUserToken: false }
+}
+
+/**
+ * Look up a user's GitHub provider_token from the auth.sessions table
+ * using the service_role admin client. Used by queue workers where no
+ * cookie-based session exists.
+ *
+ * Returns null if the user has no active session or the lookup fails.
+ */
+export async function getUserTokenFromSession(userId: string): Promise<string | null> {
+  try {
+    const { data: token, error } = await supabaseAdmin()
+      .rpc('get_user_provider_token', { p_user_id: userId })
+
+    if (error) {
+      console.warn('[token] RPC get_user_provider_token failed:', error.message)
+      return null
+    }
+
+    return token ?? null
+  } catch {
+    return null
+  }
 }

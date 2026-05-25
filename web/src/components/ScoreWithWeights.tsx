@@ -11,6 +11,7 @@ type Props = {
   total: number;
   subscores: SubScores;
   computedAt?: string | null;
+  tokenSource?: "user" | "app";
   repo?: {
     stars: number;
     forks: number;
@@ -18,12 +19,12 @@ type Props = {
   };
 };
 
-export default function ScoreWithWeights({ total, subscores, computedAt, repo }: Props) {
+export default function ScoreWithWeights({ total, subscores, computedAt, tokenSource, repo }: Props) {
   const [weights, setWeights] = useState<Partial<Record<SubScoreKey, number>> | null>(null);
 
   return (
     <>
-      <ScoreSummary total={total} subscores={subscores} weights={weights} computedAt={computedAt} repo={repo} />
+      <ScoreSummary total={total} subscores={subscores} weights={weights} computedAt={computedAt} tokenSource={tokenSource} repo={repo} />
       <WeightCustomizer onWeightsChange={setWeights} />
     </>
   );

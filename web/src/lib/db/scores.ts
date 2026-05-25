@@ -2,10 +2,14 @@ import { supabaseServer } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { computeScore } from "@reporank/core";
 import type { ScoreFactors } from "@reporank/core";
-import { mapRepoDataToFactors } from "@/lib/github/factors";
+import { mapRepoDataToFactors, fetchOpenSsfScore } from "@/lib/github/factors";
 
-export async function computeAndStoreScore(repoId: string, rawRepo: any) {
-  const factors = mapRepoDataToFactors(rawRepo);
+export async function computeAndStoreScore(repoId: string, rawRepo: any, owner?: string, name?: string) {
+  let openSsfScore: number | null = null;
+  if (owner && name) {
+    openSsfScore = await fetchOpenSsfScore(owner, name);
+  }
+  const factors = mapRepoDataToFactors(rawRepo, openSsfScore);
   const scoreResult = computeScore(factors);
 
   const supabase = supabaseAdmin();
@@ -28,6 +32,9 @@ export async function computeAndStoreScore(repoId: string, rawRepo: any) {
     .single();
 
   if (error) throw error;
+
+  Promise.resolve(supabaseAdmin().rpc('refresh_site_stats_mv')).catch(() => {});
+
   return data;
 }
 

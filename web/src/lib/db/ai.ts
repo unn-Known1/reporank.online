@@ -99,7 +99,8 @@ export async function getAiReview(repoId: string): Promise<AiReviewRow | null> {
     try {
       validateScoresJson((data as Record<string, unknown>).scores_json);
     } catch (err) {
-      console.warn("[ai] Invalid scores_json in DB row:", err);
+      console.warn("[ai] Invalid scores_json in DB row, returning null:", err);
+      return null;
     }
   }
   return (data as unknown as AiReviewRow) ?? null;
@@ -282,7 +283,7 @@ Respond with this JSON (all fields required):
     console.warn("[ai] Cross-validation flagged:", contradictions);
   }
 
-  // ── 6. Store ─────────────────────────────────────────────────────────────
+  // ── 6. Store (upsert: update existing or insert new) ──────────────────
   const supabase = supabaseAdmin();
   const evidence = {
     ...factors,
@@ -299,14 +300,21 @@ Respond with this JSON (all fields required):
     contradictions,
   };
 
-  // Defense-in-depth: validate verdict before DB insert
+  // Defense-in-depth: validate verdict before DB write
   const VALID_VERDICTS = ["RECOMMENDED", "CAUTION", "NOT_RECOMMENDED"];
   if (!VALID_VERDICTS.includes(parsed.verdict as string)) {
-    console.warn("[ai] Invalid verdict from Claude, skipping insert:", parsed.verdict);
+    console.warn("[ai] Invalid verdict from Claude, skipping write:", parsed.verdict);
     return;
   }
 
-  const { error: insertError } = await supabase.from("ai_reviews").insert({
+  // Check for existing review to update instead of insert (prevents stale row accumulation)
+  const { data: existing } = await supabase
+    .from("ai_reviews")
+    .select("id")
+    .eq("repo_id", repoId)
+    .maybeSingle();
+
+  const reviewData = {
     repo_id: repoId,
     generated_at: new Date().toISOString(),
     model_used: model,
@@ -319,10 +327,25 @@ Respond with this JSON (all fields required):
     concerns: parsed.concerns,
     red_flags: parsed.redFlags,
     injection_flagged,
-  });
+  };
 
-  if (insertError) {
-    console.warn("[db] generateAndStoreAiReview:", insertError);
+  if (existing) {
+    const { error: updateError } = await supabase
+      .from("ai_reviews")
+      .update(reviewData)
+      .eq("id", existing.id);
+
+    if (updateError) {
+      console.warn("[db] generateAndStoreAiReview update:", updateError);
+    }
+  } else {
+    const { error: insertError } = await supabase
+      .from("ai_reviews")
+      .insert(reviewData);
+
+    if (insertError) {
+      console.warn("[db] generateAndStoreAiReview insert:", insertError);
+    }
   }
 }
 

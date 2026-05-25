@@ -1,10 +1,7 @@
 import type { ScoreFactors } from "@reporank/core";
 
-// TODO(V1 — BYOT): This function currently receives a token from the caller.
-// In MVP, the caller always passes GITHUB_APP_TOKEN.
-// In V1, change the lookup route to call getGitHubToken() and pass the
-// user's session token here instead. See guide-05-byot.md.
-// PR: replace single-token approach with per-user BYOT for rate limit scaling.
+// BYOT: Callers now pass user's provider_token when available (see getGitHubToken()).
+// The token flows from lookup route → upsertRepoFromGitHub → fetchRepoFactors.
 
 export function detectHasTests(repo: any): boolean {
   const pkg = repo.packageJson?.text;
@@ -27,8 +24,8 @@ export function computeReadmeQuality(text: string | null): number {
   return Math.min(
     100,
     Math.round(
-      (length / 50) * 0.4 +
-        sections * 10 * 0.3 +
+      (length / 50) * 0.2 +
+        sections * 10 * 0.5 +
         (hasInstall ? 15 : 0) * 0.15 +
         (hasUsage ? 15 : 0) * 0.075 +
         (hasExample ? 15 : 0) * 0.075
@@ -36,7 +33,7 @@ export function computeReadmeQuality(text: string | null): number {
   );
 }
 
-export function mapRepoDataToFactors(repo: any): ScoreFactors {
+export function mapRepoDataToFactors(repo: any, openSsfScoreOverride?: number | null): ScoreFactors {
   const lastCommit = repo.defaultBranchRef?.target?.committedDate;
   const prs = (repo.pullRequests?.nodes ?? []).filter(
     (pr: any) => pr.createdAt && pr.mergedAt
@@ -67,8 +64,10 @@ export function mapRepoDataToFactors(repo: any): ScoreFactors {
     commitFrequency6mo: repo.defaultBranchRef?.target?.history?.nodes?.length ?? null,
     contributorCount6mo: uniqueContributors > 0 ? uniqueContributors : null,
     issueCloseRatio: openIssues === 0 && closedIssues === 0 ? null : closedIssues / totalIssues,
-    // Estimated from star-count bands — not measured. V1: replace with real API data.
-    avgIssueFirstResponseHours: repo.stargazerCount > 1000 ? 6 : repo.stargazerCount > 100 ? 24 : 48,
+    // Set to null — V1 limitation. Real data requires fetching issue comments (first response
+    // per issue), which is expensive via GraphQL. Once added, compute average time from issue
+    // creation to first non-author comment. Null avoids penalizing small repos with fake estimates.
+    avgIssueFirstResponseHours: null,
     prMergeHours:
       prs.length > 0
         ? prs.reduce(
@@ -91,7 +90,7 @@ export function mapRepoDataToFactors(repo: any): ScoreFactors {
     hasSecurityMd: !!repo.securityMd?.text,
     hasContributing: !!repo.contributingMd?.text,
     releaseFrequencyPerYear: releaseCount,
-    openSsfScore: null, // V1: call fetchOpenSsfScore() asynchronously before scoring
+    openSsfScore: openSsfScoreOverride ?? null,
   };
 }
 

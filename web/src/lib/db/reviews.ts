@@ -28,7 +28,7 @@ export type Review = {
 function detectSpam(body: string): boolean {
   const urlRegex = /https?:\/\/[^\s]+/g;
   const urlCount = (body.match(urlRegex) || []).length;
-  if (urlCount > 2) return true;
+  if (urlCount > 5) return true;
   if (body.length < 20 || body.length > 5000) return true;
   return false;
 }
@@ -65,11 +65,13 @@ export async function getReviewsByRepo(
   const countQuery = supabase
     .from("reviews")
     .select("*", { count: "exact", head: true })
-    .eq("repo_id", repoId);
+    .eq("repo_id", repoId)
+    .eq("spam_flagged", false);
   const dataQuery = supabase
     .from("reviews")
     .select("*")
     .eq("repo_id", repoId)
+    .eq("spam_flagged", false)
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
   const results = await Promise.allSettled([

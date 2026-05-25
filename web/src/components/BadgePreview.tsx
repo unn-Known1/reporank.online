@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 
 type Props = {
   owner: string;
@@ -21,13 +22,14 @@ export default function BadgePreview({ owner, name, params }: Props) {
   }
 
   return (
-    <img
+    <Image
       src={src}
       alt={`RepoRank badge for ${owner}/${name}`}
+      width={100}
+      height={28}
       className="h-7"
-      loading="lazy"
-      decoding="async"
       onError={() => setFailed(true)}
+      unoptimized
     />
   );
 }
