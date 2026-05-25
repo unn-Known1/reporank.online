@@ -1,0 +1,115 @@
+.badge-builder {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.badge-builder-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+}
+
+.badge-builder-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.badge-builder-field--checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.badge-builder-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.badge-builder-input,
+.badge-builder-select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 0.875rem;
+  transition: border-color 0.15s;
+}
+
+.badge-builder-input:focus,
+.badge-builder-select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-alpha);
+}
+
+.badge-builder-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+}
+
+.badge-builder-section-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.badge-builder-badge-display {
+  display: flex;
+  align-items: center;
+  min-height: 2rem;
+}
+
+.badge-builder-code-block {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+}
+
+.badge-builder-code-block pre {
+  flex: 1;
+  margin: 0;
+  overflow-x: auto;
+}
+
+.badge-builder-code-block code {
+  font-size: 0.8125rem;
+  color: var(--color-text);
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+
+.badge-builder-copy-btn {
+  flex-shrink: 0;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.375rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-elevated);
+  color: var(--color-text);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.badge-builder-copy-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}

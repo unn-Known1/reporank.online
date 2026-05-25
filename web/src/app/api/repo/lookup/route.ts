@@ -6,24 +6,7 @@ import { checkRateLimit } from "@/lib/ratelimit";
 import { getGitHubToken } from "@/lib/github/token";
 import { getScoringQueue } from "@/lib/queue";
 import { dedupe } from "@/lib/dedup";
-
-function parseRepoInput(input: string): { owner: string; name: string } | null {
-  let trimmed = input.trim();
-  if (!trimmed) return null;
-  if (trimmed.length > 200) return null;
-  const githubUrlMatch = trimmed.match(
-    /^(?:https?:\/\/)?(?:www\.)?github\.com\/([a-zA-Z0-9._-]+)\/([a-zA-Z0-9._-]+?)(?:\.git)?(?:\/.*)?$/
-  );
-  if (githubUrlMatch) {
-    const [, owner, name] = githubUrlMatch;
-    return { owner, name };
-  }
-  const parts = trimmed.split("/").filter(Boolean);
-  if (parts.length !== 2) return null;
-  const [owner, name] = parts;
-  if (!/^[a-zA-Z0-9._-]+$/.test(owner) || !/^[a-zA-Z0-9._-]+$/.test(name)) return null;
-  return { owner, name };
-}
+import { parseRepoInput } from "@/lib/utils";
 
 function getClientIp(req: Request): string {
   return (
@@ -75,7 +58,11 @@ export async function POST(req: Request) {
     }
 
     // Fallback: synchronous processing
-    const userKey = token ? `user:${token.slice(0, 8)}` : "anon";
+    // Use a stable key without exposing token bytes
+    const tokenHash = token
+      ? Buffer.from(token).toString("base64").slice(0, 12)
+      : "anon";
+    const userKey = token ? `user:${tokenHash}` : "anon";
     const repoKey = `${parsed.owner}/${parsed.name}`;
     const { dbRepo, rawRepo } = await dedupe(`lookup:${userKey}:${repoKey}`, () =>
       upsertRepoFromGitHub(parsed.owner, parsed.name, token)

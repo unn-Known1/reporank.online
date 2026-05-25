@@ -1,7 +1,8 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useId } from "react";
 import React from "react";
 import type { SubScores } from "@reporank/core";
+import { DEFAULT_WEIGHTS } from "@reporank/core";
 
 type SubScoreKey = keyof SubScores;
 
@@ -17,21 +18,9 @@ type Props = {
   };
 };
 
-const WEIGHT_LABELS: Record<string, number> = {
-  maintenance: 30,
-  community: 25,
-  security: 20,
-  documentation: 15,
-  adoption: 10,
-};
-
-const DEFAULT_WEIGHTS: Record<SubScoreKey, number> = {
-  maintenance: 0.30,
-  community: 0.25,
-  security: 0.20,
-  documentation: 0.15,
-  adoption: 0.10,
-};
+const WEIGHT_LABELS: Record<string, number> = Object.fromEntries(
+  Object.entries(DEFAULT_WEIGHTS).map(([k, v]) => [k, Math.round(v * 100)])
+);
 
 function getScoreInfo(score: number) {
   if (score >= 85) {
@@ -179,6 +168,7 @@ export default function ScoreSummary({
 }: Props) {
   const hasCustomWeights = weights !== null && weights !== undefined;
   const [mounted, setMounted] = useState(false);
+  const gradientId = useId().replace(/:/g, "-");
 
   let displayTotal = total;
   if (hasCustomWeights || total === 0) {
@@ -262,7 +252,7 @@ export default function ScoreSummary({
                       cy="64"
                       r="56"
                       fill="none"
-                      stroke={`url(#scoreGrad-${repo?.stars ?? 0}-${displayTotal})`}
+                      stroke={`url(#scoreGrad-${gradientId})`}
                       strokeWidth="6"
                       strokeLinecap="round"
                       style={{
@@ -272,7 +262,7 @@ export default function ScoreSummary({
                       }}
                     />
                     <defs>
-                      <linearGradient id={`scoreGrad-${repo?.stars ?? 0}-${displayTotal}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                       <linearGradient id={`scoreGrad-${gradientId}`} x1="0%" y1="0%" x2="100%" y2="100%">
                         <stop offset="0%" stopColor={scoreInfo.gradientFrom} />
                         <stop offset="100%" stopColor={scoreInfo.gradientTo} />
                       </linearGradient>

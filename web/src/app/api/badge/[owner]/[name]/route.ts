@@ -1,70 +1,40 @@
 import { NextResponse } from "next/server";
-import { getRepoByOwnerName, upsertRepoFromGitHub } from "@/lib/db/repos";
-import { getLatestScore, computeAndStoreScore } from "@/lib/db/scores";
-import { maybeGenerateAiReview } from "@/lib/db/ai";
-import { dedupe } from "@/lib/dedup";
+import { getRepoByOwnerName } from "@/lib/db/repos";
+import { getLatestScore } from "@/lib/db/scores";
 import { renderBadgeSvg } from "@/lib/badge/svg";
+import { parseBadgeParams } from "@/lib/badge/badge-config";
 
 function resolveName(name: string): string {
   return name.replace(/\.svg$/i, "");
 }
 
-async function tryGetScore(owner: string, repoName: string): Promise<number | null> {
+async function fetchScoreValue(owner: string, repoName: string, subscore: string | null): Promise<number | null> {
   const repo = await getRepoByOwnerName(owner, repoName);
   if (!repo) return null;
   const score = await getLatestScore(repo.id);
-  return score?.total_score ?? null;
-}
-
-async function tryGetBadgeToken(): Promise<string | null> {
-  try {
-    const { supabaseServer } = await import("@/lib/supabase/server");
-    const supabase = await supabaseServer();
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.provider_token) return session.provider_token;
-  } catch {}
-  try {
-    return process.env.GITHUB_APP_TOKEN ?? null;
-  } catch {
-    return null;
+  if (!score) return null;
+  if (subscore && score.subscores_json) {
+    const subs = score.subscores_json as Record<string, number>;
+    return subs[subscore] ?? null;
   }
+  return score.total_score;
 }
 
-async function tryLookup(owner: string, repoName: string): Promise<number | null> {
-  const token = await tryGetBadgeToken();
-  if (!token) return null;
-  try {
-    const result = await dedupe(`badge:${owner}/${repoName}`, () =>
-      upsertRepoFromGitHub(owner, repoName, token)
-    );
-    if (!result.dbRepo) return null;
-    await computeAndStoreScore(result.dbRepo.id, result.rawRepo);
-    maybeGenerateAiReview(result.dbRepo.id, result.dbRepo.owner, result.dbRepo.name, {
-      rawRepo: result.rawRepo,
-      token,
-    });
-    const score = await getLatestScore(result.dbRepo.id);
-    return score?.total_score ?? null;
-  } catch {
-    return null;
-  }
-}
-
-export async function GET(_: Request, { params }: { params: { owner: string; name: string } }) {
+export async function GET(request: Request, { params }: { params: { owner: string; name: string } }) {
   const repoName = resolveName(params.name);
+  const url = new URL(request.url);
+  const badgeConfig = parseBadgeParams(url);
 
-  let score = await tryGetScore(params.owner, repoName);
-  if (score == null) {
-    score = await tryLookup(params.owner, repoName);
-  }
+  const scoreValue = await fetchScoreValue(params.owner, repoName, badgeConfig.subscore);
 
-  const svg = renderBadgeSvg(score);
+  badgeConfig.scoreValue = scoreValue;
+  const svg = renderBadgeSvg(badgeConfig);
 
   return new NextResponse(svg, {
     status: 200,
     headers: {
       "Content-Type": "image/svg+xml",
-      ...(score == null ? { "Cache-Control": "no-cache" } : { "Cache-Control": "public, max-age=3600" }),
+      ...(scoreValue == null ? { "Cache-Control": "no-cache" } : { "Cache-Control": "public, max-age=3600" }),
     },
   });
 }

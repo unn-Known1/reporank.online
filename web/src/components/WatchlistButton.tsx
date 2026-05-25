@@ -7,26 +7,19 @@ type Props = {
   owner: string;
   name: string;
   repoId: string;
+  initialIsWatched?: boolean;
 };
 
-export default function WatchlistButton({ owner, name, repoId }: Props) {
-  const [watching, setWatching] = useState(false);
+export default function WatchlistButton({ owner, name, repoId, initialIsWatched = false }: Props) {
+  const [watching, setWatching] = useState(initialIsWatched);
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    const supabase = supabaseBrowser();
-    supabase.auth.getSession().then(({ data }) => {
-      const u = data?.session?.user;
-      setUser(u ?? null);
-      if (u) {
-        fetch(`/api/user/watchlist/${repoId}`)
-          .then((r) => r.json())
-          .then((data) => setWatching(data.watching))
-          .catch(() => {});
-      }
+    supabaseBrowser().auth.getSession().then(({ data }) => {
+      setUser(data?.session?.user ?? null);
     });
-  }, [repoId]);
+  }, []);
 
   const handleClick = async () => {
     if (!user) {

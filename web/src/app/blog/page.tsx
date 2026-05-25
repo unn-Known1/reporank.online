@@ -10,15 +10,16 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Blog — RepoRank",
   description: "Insights and analysis about GitHub repositories — repository credibility scores, best practices, and community health metrics.",
+  alternates: { canonical: `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://reporank.online"}/blog` },
   openGraph: {
     title: "Blog — RepoRank",
-    description: "Insights and analysis about GitHub repositories.",
+    description: "Insights and analysis about GitHub repositories — repository credibility scores, best practices, and community health metrics.",
     type: "website",
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "Blog — RepoRank",
-    description: "Insights and analysis about GitHub repositories.",
+    description: "Insights and analysis about GitHub repositories — repository credibility scores, best practices, and community health metrics.",
   },
 };
 

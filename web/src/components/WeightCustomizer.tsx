@@ -2,18 +2,11 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import type { SubScores } from "@reporank/core";
+import { DEFAULT_WEIGHTS } from "@reporank/core";
 
 type SubScoreKey = keyof SubScores;
 
 const STORAGE_KEY = "reporank:scoring-weights";
-
-const DEFAULT_WEIGHTS: Record<SubScoreKey, number> = {
-  maintenance: 0.30,
-  community: 0.25,
-  security: 0.20,
-  documentation: 0.15,
-  adoption: 0.10,
-};
 
 const LABELS: Record<SubScoreKey, string> = {
   maintenance: "Maintenance",

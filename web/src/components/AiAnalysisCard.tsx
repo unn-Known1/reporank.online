@@ -45,6 +45,13 @@ type AiReview = {
   concerns: string[];
   red_flags: string[];
   injection_flagged: boolean;
+  evidence?: {
+    lastCommitDaysAgo?: number | null;
+    contributorCount?: number | null;
+    totalCommits?: number | null;
+    readmeLength?: number | null;
+    stars?: number | null;
+  } | null;
 };
 
 type Props = { ai: AiReview };
@@ -106,6 +113,31 @@ export default function AiAnalysisCard({ ai }: Props) {
       </div>
 
       <p className="relative mt-4 text-sm leading-relaxed text-[var(--color-text-secondary)]">{ai.summary}</p>
+
+      {ai.evidence && (
+        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1">
+          {ai.evidence.lastCommitDaysAgo != null && (
+            <span className="text-xs font-mono text-[var(--color-text-muted)]">
+              Last commit {ai.evidence.lastCommitDaysAgo === 0 ? "today" : `${ai.evidence.lastCommitDaysAgo}d ago`}
+            </span>
+          )}
+          {ai.evidence.contributorCount != null && ai.evidence.contributorCount > 0 && (
+            <span className="text-xs font-mono text-[var(--color-text-muted)]">
+              {ai.evidence.contributorCount} contributors
+            </span>
+          )}
+          {ai.evidence.totalCommits != null && ai.evidence.totalCommits > 0 && (
+            <span className="text-xs font-mono text-[var(--color-text-muted)]">
+              {ai.evidence.totalCommits.toLocaleString()} commits
+            </span>
+          )}
+          {ai.evidence.readmeLength != null && ai.evidence.readmeLength > 0 && (
+            <span className="text-xs font-mono text-[var(--color-text-muted)]">
+              {ai.evidence.readmeLength.toLocaleString()}-char README
+            </span>
+          )}
+        </div>
+      )}
 
       <button
         id="ai-analysis-toggle"

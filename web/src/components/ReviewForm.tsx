@@ -4,11 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 const DIMENSIONS = [
-  { key: "code_quality", label: "Code Quality" },
-  { key: "docs", label: "Documentation" },
   { key: "maintenance", label: "Maintenance" },
-  { key: "ease_of_use", label: "Ease of Use" },
+  { key: "community", label: "Community" },
   { key: "security", label: "Security" },
+  { key: "documentation", label: "Documentation" },
+  { key: "adoption", label: "Adoption" },
 ];
 
 export default function ReviewForm({ repoId, owner, name }: { repoId: string; owner: string; name: string }) {

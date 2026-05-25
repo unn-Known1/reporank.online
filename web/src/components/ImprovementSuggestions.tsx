@@ -18,7 +18,7 @@ type Suggestion = {
 function getSuggestions(score: number, subscores: SubScores, stars: number, description: string | null, topics: string[], language: string | null): Suggestion[] {
   const items: Suggestion[] = [];
 
-  if (subscores.security < 40) {
+  if (subscores.documentation < 40) {
     items.push({
       label: "Add a license file",
       impact: "+10–15 pts",
@@ -26,7 +26,7 @@ function getSuggestions(score: number, subscores: SubScores, stars: number, desc
     });
   }
 
-  if (subscores.documentation < 40) {
+  if (subscores.documentation < 50) {
     items.push({
       label: "Improve README quality",
       impact: "+8–12 pts",
@@ -58,11 +58,19 @@ function getSuggestions(score: number, subscores: SubScores, stars: number, desc
     });
   }
 
+  if (subscores.security < 40) {
+    items.push({
+      label: "Add SECURITY.md",
+      impact: "+5–8 pts",
+      description: "A SECURITY.md file signals responsible disclosure practices and boosts your security subscore directly.",
+    });
+  }
+
   if (subscores.community < 30) {
     items.push({
-      label: "Add SECURITY.md and CONTRIBUTING.md",
-      impact: "+5 pts",
-      description: "Security and contributing guides signal a well-governed project that welcomes community involvement.",
+      label: "Add CONTRIBUTING.md",
+      impact: "+3–5 pts",
+      description: "Contributing guides signal a well-governed project that welcomes community involvement.",
     });
   }
 

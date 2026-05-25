@@ -67,6 +67,7 @@ export function mapRepoDataToFactors(repo: any): ScoreFactors {
     commitFrequency6mo: repo.defaultBranchRef?.target?.history?.nodes?.length ?? null,
     contributorCount6mo: uniqueContributors > 0 ? uniqueContributors : null,
     issueCloseRatio: openIssues === 0 && closedIssues === 0 ? null : closedIssues / totalIssues,
+    // Estimated from star-count bands — not measured. V1: replace with real API data.
     avgIssueFirstResponseHours: repo.stargazerCount > 1000 ? 6 : repo.stargazerCount > 100 ? 24 : 48,
     prMergeHours:
       prs.length > 0
@@ -90,7 +91,7 @@ export function mapRepoDataToFactors(repo: any): ScoreFactors {
     hasSecurityMd: !!repo.securityMd?.text,
     hasContributing: !!repo.contributingMd?.text,
     releaseFrequencyPerYear: releaseCount,
-    openSsfScore: null,
+    openSsfScore: null, // V1: call fetchOpenSsfScore() asynchronously before scoring
   };
 }
 

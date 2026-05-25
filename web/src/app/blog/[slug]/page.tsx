@@ -69,6 +69,7 @@ export default async function BlogPostPage({
         description={post.seo_meta_description || post.excerpt || ""}
         url={postUrl}
         publishedAt={post.published_at ?? new Date().toISOString()}
+        updatedAt={post.updated_at}
         authorName={post.author?.name ?? "RepoRank"}
       />
       <article>

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { parseRepoInput } from "@/lib/utils";
 
 type RecentSearch = { owner: string; name: string; searchedAt: string };
 
@@ -22,23 +23,6 @@ function timeAgo(dateStr: string): string {
 
 const STORAGE_KEY = "reporank:recent-searches";
 const MAX_ENTRIES = 10;
-
-function parseRepoInput(input: string): { owner: string; name: string } | null {
-  let trimmed = input.trim();
-  if (!trimmed) return null;
-  const githubUrlMatch = trimmed.match(
-    /^(?:https?:\/\/)?(?:www\.)?github\.com\/([a-zA-Z0-9._-]+)\/([a-zA-Z0-9._-]+?)(?:\.git)?(?:\/.*)?$/
-  );
-  if (githubUrlMatch) {
-    const [, owner, name] = githubUrlMatch;
-    return { owner, name };
-  }
-  const parts = trimmed.split("/").filter(Boolean);
-  if (parts.length !== 2) return null;
-  const [owner, name] = parts;
-  if (!/^[a-zA-Z0-9._-]+$/.test(owner) || !/^[a-zA-Z0-9._-]+$/.test(name)) return null;
-  return { owner, name };
-}
 
 function loadRecent(): RecentSearch[] {
   try {

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import ReviewsList from "@/components/ReviewsList";
 import ReviewForm from "@/components/ReviewForm";
+import type { Review } from "@/lib/db/reviews";
 
 type ReviewRow = {
   id: string;
@@ -18,20 +19,38 @@ type ReviewRow = {
   is_author: boolean;
 };
 
+function toReviewRow(r: Review | ReviewRow): ReviewRow {
+  if ("is_author" in r) return r as ReviewRow;
+  const rev = r as Review;
+  return {
+    id: rev.id,
+    repo_id: rev.repo_id,
+    user_id: rev.user_id,
+    user: rev.user ?? (rev.github_username ? { username: rev.github_username, avatar_url: `https://github.com/${rev.github_username}.png?size=40` } : null),
+    ratings_json: rev.ratings_json as Record<string, number>,
+    body: rev.body,
+    created_at: rev.created_at,
+    is_outdated: rev.is_outdated,
+    spam_flagged: rev.spam_flagged,
+    is_author: false,
+  };
+}
+
 type Props = {
   repoId: string;
   owner: string;
   name: string;
+  initialReviews?: Review[];
+  initialTotal?: number;
 };
 
-export default function ReviewSection({ repoId, owner, name }: Props) {
+export default function ReviewSection({ repoId, owner, name, initialReviews = [], initialTotal = 0 }: Props) {
   const [userId, setUserId] = useState<string | null>(null);
-  const [reviews, setReviews] = useState<ReviewRow[]>([]);
+  const [reviews, setReviews] = useState<ReviewRow[]>(initialReviews.map(toReviewRow));
   const [page, setPage] = useState(1);
-  const [totalReviews, setTotalReviews] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [totalReviews, setTotalReviews] = useState(initialTotal);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -43,52 +62,18 @@ export default function ReviewSection({ repoId, owner, name }: Props) {
       });
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await fetch(`/api/repo/${owner}/${name}?reviews_page=1&reviews_limit=5`);
-        if (!res.ok) throw new Error("Failed to fetch reviews");
-        const data = await res.json();
-        if (cancelled) return;
-        setReviews(data.reviews ?? []);
-        setTotalReviews(data.total_reviews ?? 0);
-      } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load reviews");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [owner, name, retryCount]);
-
-  function handleRetry() {
-    setRetryCount((c) => c + 1);
-  }
-
   async function handleLoadMore() {
     setLoading(true);
-    setPage((prev) => {
-      const nextPage = prev + 1;
-      fetchMore(owner, name, nextPage);
-      return nextPage;
-    });
-  }
-
-  async function fetchMore(owner: string, name: string, pageNum: number) {
+    const nextPage = page + 1;
+    setPage(nextPage);
     try {
-      const res = await fetch(`/api/repo/${owner}/${name}?reviews_page=${pageNum}&reviews_limit=5`);
+      const res = await fetch(`/api/repo/${owner}/${name}?reviews_page=${nextPage}&reviews_limit=5`);
       if (!res.ok) throw new Error("Failed to fetch reviews");
       const data = await res.json();
       setReviews((prev) => [...prev, ...(data.reviews ?? [])]);
       setTotalReviews(data.total_reviews ?? 0);
     } catch {
-      // silently fail
+      setError("Failed to load more reviews");
     } finally {
       setLoading(false);
     }
@@ -111,20 +96,20 @@ export default function ReviewSection({ repoId, owner, name }: Props) {
       {error && (
         <div className="text-center py-4">
           <p className="text-sm text-danger-600 dark:text-danger-500">{error}</p>
-          <button onClick={handleRetry} className="mt-2 text-sm text-[var(--color-primary)] hover:underline rounded">
-            Retry
+          <button onClick={() => setError(null)} className="mt-2 text-sm text-[var(--color-primary)] hover:underline rounded">
+            Dismiss
           </button>
         </div>
       )}
 
-      {mounted && loading && reviews.length === 0 && (
-        <div className="flex items-center justify-center py-8">
+      {mounted && loading && (
+        <div className="flex items-center justify-center py-4">
           <div className="flex items-center gap-2 text-sm text-[var(--color-text-muted)]">
             <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
-            Loading reviews...
+            Loading more...
           </div>
         </div>
       )}

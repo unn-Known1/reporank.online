@@ -5,23 +5,7 @@ import { useRouter } from "next/navigation";
 import AuthButton from "@/components/AuthButton";
 import BlogNavTab from "@/components/blog/BlogNavTab";
 import ExtensionNavTab from "@/components/extension/ExtensionNavTab";
-
-function parseRepoInput(input: string): { owner: string; name: string } | null {
-  let trimmed = input.trim();
-  if (!trimmed) return null;
-  const githubUrlMatch = trimmed.match(
-    /^(?:https?:\/\/)?(?:www\.)?github\.com\/([a-zA-Z0-9._-]+)\/([a-zA-Z0-9._-]+?)(?:\.git)?(?:\/.*)?$/
-  );
-  if (githubUrlMatch) {
-    const [, owner, name] = githubUrlMatch;
-    return { owner, name };
-  }
-  const parts = trimmed.split("/").filter(Boolean);
-  if (parts.length !== 2) return null;
-  const [owner, name] = parts;
-  if (!/^[a-zA-Z0-9._-]+$/.test(owner) || !/^[a-zA-Z0-9._-]+$/.test(name)) return null;
-  return { owner, name };
-}
+import { parseRepoInput } from "@/lib/utils";
 
 function ThemeToggle() {
   const [dark, setDark] = useState(false);
@@ -85,6 +69,17 @@ export default function Navbar() {
     const parsed = parseRepoInput(searchValue);
     if (!parsed) return;
     setSearchLoading(true);
+    try {
+      await fetch("/api/repo/lookup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ input: `${parsed.owner}/${parsed.name}` }),
+      });
+    } catch {
+      // navigate anyway — page will handle missing score gracefully
+    } finally {
+      setSearchLoading(false);
+    }
     router.push(`/github/${parsed.owner}/${parsed.name}`);
   }, [searchValue, router]);
 

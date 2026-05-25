@@ -1,7 +1,30 @@
+import type { Metadata } from "next";
 import { extensionMeta } from "@/lib/extension/constants";
 import BrowserCard from "@/components/extension/BrowserCard";
 import BrowserIcons from "@/components/extension/BrowserIcons";
 import InstallInstructions from "@/components/extension/InstallInstructions";
+
+const base = process.env.NEXT_PUBLIC_BASE_URL ?? "https://reporank.online";
+
+export const metadata: Metadata = {
+  title: "Browser Extension — RepoRank",
+  description:
+    "Install the RepoRank browser extension for Chrome, Firefox, and Edge. See repository credibility scores directly on GitHub, GitLab, npm, Bitbucket, and Codeberg.",
+  alternates: { canonical: `${base}/extension` },
+  openGraph: {
+    title: "RepoRank Browser Extension",
+    description:
+      "See repository credibility scores directly on GitHub, GitLab, npm, Bitbucket, and Codeberg — without leaving the page.",
+    type: "website",
+    url: `${base}/extension`,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "RepoRank Browser Extension",
+    description:
+      "See repository credibility scores directly on GitHub, GitLab, npm, Bitbucket, and Codeberg — without leaving the page.",
+  },
+};
 
 export default function ExtensionPage() {
   const { version, description, browsers } = extensionMeta;

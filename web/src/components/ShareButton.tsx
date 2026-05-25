@@ -13,8 +13,8 @@ export default function ShareButton({ owner, name, score, grade }: Props) {
   const [copied, setCopied] = useState(false);
 
   const shareUrl = `https://reporank.online/github/${owner}/${name}`;
-  const scoreText = score != null ? `scored ${score}/100 (${grade})` : "check the score";
-  const shareText = `${owner}/${name} ${scoreText} on RepoRank — ${shareUrl}`;
+  const scoreText = score != null ? `scores ${grade} (${Math.round(score)}/100)` : "— check the score";
+  const shareText = `${owner}/${name} ${scoreText} on RepoRank 🔍\n${shareUrl}`;
 
   const handleCopy = useCallback(async () => {
     try {

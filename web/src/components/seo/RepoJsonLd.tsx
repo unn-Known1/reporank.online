@@ -7,6 +7,7 @@ interface RepoJsonLdProps {
   forks: number;
   topics: string[];
   score: number | null;
+  reviewCount?: number;
   createdAt: string | null;
 }
 
@@ -19,9 +20,11 @@ export default function RepoJsonLd({
   forks,
   topics,
   score,
+  reviewCount = 0,
   createdAt,
 }: RepoJsonLdProps) {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://reporank.online";
+  const repoUrl = `${baseUrl}/github/${owner}/${name}`;
 
   const breadcrumbLd = {
     "@context": "https://schema.org",
@@ -29,38 +32,35 @@ export default function RepoJsonLd({
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "RepoRank", item: baseUrl },
       { "@type": "ListItem", position: 2, name: owner, item: `${baseUrl}/github/${owner}` },
-      { "@type": "ListItem", position: 3, name: name, item: `${baseUrl}/github/${owner}/${name}` },
+      { "@type": "ListItem", position: 3, name: name, item: repoUrl },
     ],
   };
 
   const softwareLd: Record<string, unknown> = {
     "@context": "https://schema.org",
-    "@type": "SoftwareSourceCode",
+    "@type": "SoftwareApplication",
+    "@id": repoUrl,
     name: `${owner}/${name}`,
     description: description ?? `${owner}/${name} on RepoRank`,
-    codeRepository: `https://github.com/${owner}/${name}`,
-    ...(language ? { programmingLanguage: language } : {}),
+    url: repoUrl,
+    downloadUrl: `https://github.com/${owner}/${name}`,
     operatingSystem: "Cross-platform",
     applicationCategory: "DeveloperApplication",
-    ...(score != null
+    ...(language ? { programmingLanguage: language } : {}),
+    ...(topics.length > 0 ? { keywords: topics } : {}),
+    author: { "@type": "Person", name: owner },
+    ...(createdAt ? { dateCreated: createdAt } : {}),
+    ...(score != null && reviewCount > 0
       ? {
           aggregateRating: {
             "@type": "AggregateRating",
             ratingValue: Math.round(score),
             bestRating: 100,
-            ratingCount: 1,
-            name: "RepoRank Score",
+            worstRating: 0,
+            ratingCount: reviewCount,
           },
         }
       : {}),
-    author: { "@type": "Person", name: owner },
-    ...(createdAt ? { dateCreated: createdAt } : {}),
-    keywords: topics.length > 0 ? topics.join(", ") : undefined,
-    offers: {
-      "@type": "Offer",
-      price: "0",
-      priceCurrency: "USD",
-    },
   };
 
   return (
