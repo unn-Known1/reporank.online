@@ -59,13 +59,11 @@ export async function getDashboardData(userId: string): Promise<{
   // Batch-update last_viewed_at for all watched repos
   const supabaseAdminClient = supabaseAdmin();
   const now = new Date().toISOString();
-  supabaseAdminClient
+  const { error } = await supabaseAdminClient
     .from("watchlist_items")
     .update({ last_viewed_at: now })
-    .in("id", watchlist.map((w) => w.id))
-    .then(({ error }) => {
-      if (error) console.warn("[db] updateLastViewed:", error);
-    });
+    .in("id", watchlist.map((w) => w.id));
+  if (error) console.warn("[db] updateLastViewed:", error);
 
   return { items, total: items.length };
 }

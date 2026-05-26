@@ -17,7 +17,7 @@ export function detectHasTests(repo: any): boolean {
 export function computeReadmeQuality(text: string | null): number {
   if (!text) return 0;
   const length = Math.min(text.length, 5000);
-  const sections = (text.match(/^#{1,3}\s+\w/mg) ?? []).length;
+  const sections = Math.min((text.match(/^#{1,3}\s+\w/mg) ?? []).length, 10);
   const hasInstall = /\binstall\b/i.test(text);
   const hasUsage = /\busage\b|\busing\b/i.test(text);
   const hasExample = /\bexample\b|\bquick.?start\b/i.test(text);
@@ -61,7 +61,7 @@ export function mapRepoDataToFactors(repo: any, openSsfScoreOverride?: number | 
     lastCommitDaysAgo: lastCommit
       ? Math.floor((Date.now() - new Date(lastCommit).getTime()) / 86400000)
       : null,
-    commitFrequency6mo: repo.defaultBranchRef?.target?.history?.nodes?.length ?? null,
+    commitFrequency6mo: repo.defaultBranchRef?.target?.history?.totalCount ?? repo.defaultBranchRef?.target?.history?.nodes?.length ?? null,
     contributorCount6mo: uniqueContributors > 0 ? uniqueContributors : null,
     issueCloseRatio: openIssues === 0 && closedIssues === 0 ? null : closedIssues / totalIssues,
     // Set to null — V1 limitation. Real data requires fetching issue comments (first response

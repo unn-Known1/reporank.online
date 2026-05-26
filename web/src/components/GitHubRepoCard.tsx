@@ -165,12 +165,16 @@ export default function GitHubRepoCard({ repo, onWatchlistToggle, onScoreNow }: 
     setWatchlisted(newState);
 
     try {
-      const method = newState ? "POST" : "DELETE";
-      const res = await fetch("/api/user/watchlist", {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ owner, name }),
-      });
+      let res: Response;
+      if (newState) {
+        res = await fetch("/api/user/watchlist", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ owner, name }),
+        });
+      } else {
+        res = await fetch(`/api/user/watchlist/${repo.id}`, { method: "DELETE" });
+      }
       if (!res.ok) {
         setWatchlisted(previous);
         if (res.status === 409) setWatchlisted(true);

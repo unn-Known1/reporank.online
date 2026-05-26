@@ -92,7 +92,7 @@ describe('badge API endpoint', () => {
 
     const { GET } = await import('@/app/api/badge/[owner]/[name]/route')
     const res = await GET(new Request('http://localhost/api/badge/vercel/next.js'), {
-      params: { owner: 'vercel', name: 'next.js' },
+      params: Promise.resolve({ owner: 'vercel', name: 'next.js' }),
     })
 
     expect(res.status).toBe(200)
@@ -106,7 +106,7 @@ describe('badge API endpoint', () => {
 
     const { GET } = await import('@/app/api/badge/[owner]/[name]/route')
     const res = await GET(new Request('http://localhost/api/badge/nobody/missing'), {
-      params: { owner: 'nobody', name: 'missing' },
+      params: Promise.resolve({ owner: 'nobody', name: 'missing' }),
     })
 
     expect(res.status).toBe(200)
@@ -120,7 +120,7 @@ describe('badge API endpoint', () => {
 
     const { GET } = await import('@/app/api/badge/[owner]/[name]/route')
     const res = await GET(new Request('http://localhost/api/badge/vercel/next.js'), {
-      params: { owner: 'vercel', name: 'next.js' },
+      params: Promise.resolve({ owner: 'vercel', name: 'next.js' }),
     })
 
     const cache = res.headers.get('cache-control') ?? ''
@@ -134,7 +134,7 @@ describe('badge API endpoint', () => {
 
     const { GET } = await import('@/app/api/badge/[owner]/[name]/route')
     const res = await GET(new Request('http://localhost/api/badge/vercel/next.js'), {
-      params: { owner: 'vercel', name: 'next.js' },
+      params: Promise.resolve({ owner: 'vercel', name: 'next.js' }),
     })
 
     const body = await res.text()

@@ -20,12 +20,13 @@ async function fetchScoreValue(owner: string, repoName: string, subscore: string
   return score.total_score;
 }
 
-export async function GET(request: Request, { params }: { params: { owner: string; name: string } }) {
-  const repoName = resolveName(params.name);
+export async function GET(request: Request, { params }: { params: Promise<{ owner: string; name: string }> }) {
+  const { owner, name } = await params;
+  const repoName = resolveName(name);
   const url = new URL(request.url);
   const badgeConfig = parseBadgeParams(url);
 
-  const scoreValue = await fetchScoreValue(params.owner, repoName, badgeConfig.subscore);
+  const scoreValue = await fetchScoreValue(owner, repoName, badgeConfig.subscore);
 
   badgeConfig.scoreValue = scoreValue;
   const svg = renderBadgeSvg(badgeConfig);

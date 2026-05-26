@@ -4,9 +4,9 @@ import { getLatestScore } from "@/lib/db/scores";
 
 export async function GET(
   _: Request,
-  { params }: { params: { owner: string; name: string } },
+  { params }: { params: Promise<{ owner: string; name: string }> },
 ) {
-  const { owner, name } = params;
+  const { owner, name } = await params;
   const repo = await getRepoByOwnerName(owner, name);
   const score = repo ? await getLatestScore(repo.id) : null;
   const total = score ? Math.round(score.total_score) : null;

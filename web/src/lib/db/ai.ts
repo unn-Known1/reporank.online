@@ -34,6 +34,48 @@ type AiReviewRow = {
   injection_flagged: boolean;
 };
 
+/** Extract JSON object from text using brace-counting with string-literal awareness.
+ *  Handles nested objects and string literals containing braces.
+ *  Returns null if no valid JSON object found. */
+function extractJson(text: string): string | null {
+  const start = text.indexOf('{');
+  if (start === -1) return null;
+
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+
+  for (let i = start; i < text.length; i++) {
+    const ch = text[i];
+
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+
+    if (ch === '\\' && inString) {
+      escaped = true;
+      continue;
+    }
+
+    if (ch === '"') {
+      inString = !inString;
+      continue;
+    }
+
+    if (!inString) {
+      if (ch === '{') depth++;
+      else if (ch === '}') depth--;
+    }
+
+    if (depth === 0) {
+      return text.slice(start, i + 1);
+    }
+  }
+
+  return null;
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 /** Strip HTML, markdown, JS protocols, event handlers, control chars and truncate to maxLen chars */
@@ -244,8 +286,7 @@ Respond with this JSON (all fields required):
   let parsed: ClaudeResponse;
   try {
     const cleaned = rawOutput.replace(/```[\s\S]*?```/g, "").trim();
-    const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-    const jsonStr = jsonMatch ? jsonMatch[0] : cleaned;
+    const jsonStr = extractJson(cleaned) ?? cleaned;
 
     if (checkInjection(cleaned)) {
       console.warn("[ai] Possible prompt injection detected in output");

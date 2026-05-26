@@ -66,6 +66,7 @@ export default function WeightCustomizer({ onWeightsChange }: Props) {
   useEffect(() => {
     const stored = loadWeights();
     setWeights(stored);
+    onChangeRef.current(stored);
     setMounted(true);
   }, []);
 

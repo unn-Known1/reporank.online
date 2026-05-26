@@ -4,8 +4,9 @@ import { getLatestScore } from "@/lib/db/scores";
 import { getAiReview } from "@/lib/db/ai";
 import { getReviewSummary, getReviewsByRepo } from "@/lib/db/reviews";
 
-export async function GET(request: Request, { params }: { params: { owner: string; name: string } }) {
-  const repo = await getRepoByOwnerName(params.owner, params.name);
+export async function GET(request: Request, { params }: { params: Promise<{ owner: string; name: string }> }) {
+  const { owner, name } = await params;
+  const repo = await getRepoByOwnerName(owner, name);
   if (!repo) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const { searchParams } = new URL(request.url);

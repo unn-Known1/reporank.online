@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { getRepoByOwnerName } from "@/lib/db/repos";
 
-export async function GET(request: Request, { params }: { params: { owner: string; name: string } }) {
-  const repo = await getRepoByOwnerName(params.owner, params.name);
+export async function GET(request: Request, { params }: { params: Promise<{ owner: string; name: string }> }) {
+  const { owner, name } = await params;
+  const repo = await getRepoByOwnerName(owner, name);
   if (!repo) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const { searchParams } = new URL(request.url);

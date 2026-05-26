@@ -5,12 +5,13 @@ import { getUser } from "@/lib/supabase/server";
 
 const NO_CACHE_HEADERS = { "Cache-Control": "no-cache, no-store" };
 
-export async function POST(req: Request, { params }: { params: { owner: string; name: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ owner: string; name: string }> }) {
   try {
+    const { owner, name } = await params;
     const user = await getUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: NO_CACHE_HEADERS });
 
-    const repo = await getRepoByOwnerName(params.owner, params.name);
+    const repo = await getRepoByOwnerName(owner, name);
     if (!repo) return NextResponse.json({ error: "Not found" }, { status: 404, headers: NO_CACHE_HEADERS });
 
     const payload = await req.json();

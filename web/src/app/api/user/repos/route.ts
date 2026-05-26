@@ -8,6 +8,7 @@ import { checkRateLimit } from "@/lib/ratelimit";
 export const dynamic = 'force-dynamic';
 
 export type UserRepoCard = {
+  id: string;
   owner: string;
   name: string;
   fullName: string;
@@ -148,6 +149,7 @@ async function enrichReposWithDbData(
     const isInWatchlist = repoId ? watchlistMap.get(repoId) ?? false : false;
 
     return {
+      id: repoId ?? "",
       owner: repo.owner.login,
       name: repo.name,
       fullName: repo.nameWithOwner,
