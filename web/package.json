@@ -19,7 +19,7 @@
     "@supabase/supabase-js": "^2.106.2",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
-    "bullmq": "^5.76.10",
+    "bullmq": "^5.77.3",
     "feed": "^5.2.1",
     "ioredis": "^5.10.1",
     "next": "^14.2",
