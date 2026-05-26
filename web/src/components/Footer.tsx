@@ -1,9 +1,9 @@
 export default function Footer() {
   return (
     <footer className="border-t border-[var(--color-border)] bg-[var(--color-surface)]" aria-label="Footer">
-      <div className="mx-auto max-w-5xl px-6 py-12">
-        <div className="grid gap-10 sm:grid-cols-3">
-          <div className="sm:col-span-1">
+      <div className="mx-auto max-w-7xl px-6 py-12">
+        <div className="grid gap-10 sm:grid-cols-2 md:grid-cols-4">
+          <div className="md:col-span-1">
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-500 to-cyan-600 shadow-sm">
                 <span className="text-xs font-extrabold text-white" style={{ fontFamily: "'Outfit', system-ui, sans-serif" }}>RR</span>
@@ -15,28 +15,34 @@ export default function Footer() {
             </p>
           </div>
           <div>
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Product</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Explore</h3>
             <ul className="mt-4 space-y-3">
+              <li><FooterLink href="/about">About</FooterLink></li>
+              <li><FooterLink href="/faq">FAQ</FooterLink></li>
+              <li><FooterLink href="/badge-builder">Badge Builder</FooterLink></li>
+              <li><FooterLink href="/extension">Extension</FooterLink></li>
+            </ul>
+          </div>
+          <div>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Resources</h3>
+            <ul className="mt-4 space-y-3">
+              <li><FooterLink href="/blog">Blog</FooterLink></li>
+              <li><FooterLink href="/blog/community">Community</FooterLink></li>
+              <li><FooterLink href="/blog/feed.xml">RSS Feed</FooterLink></li>
+              <li><FooterLink href="/blog/community/feed.xml">Community RSS</FooterLink></li>
               <li>
-                <a href="/faq" className="text-sm text-[var(--color-text-secondary)] transition-colors duration-200 hover:text-[var(--color-text)]">
-                  FAQ
-                </a>
-              </li>
-              <li>
-                <a href="https://github.com/unn-Known1/reporank.online" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm text-[var(--color-text-secondary)] transition-colors duration-200 hover:text-[var(--color-text)]">
+                <FooterLink href="https://github.com/unn-Known1/reporank.online" external>
                   GitHub
-                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-                  </svg>
-                </a>
+                </FooterLink>
               </li>
+              <li><FooterLink href="/compare">Compare</FooterLink></li>
             </ul>
           </div>
           <div>
             <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">Legal</h3>
             <ul className="mt-4 space-y-3">
               <li className="text-sm text-[var(--color-text-muted)]">MIT License</li>
-              <li className="text-sm text-[var(--color-text-muted)]">Data from GitHub API</li>
+              <li><FooterLink href="https://docs.github.com/en/rest">Data from GitHub API</FooterLink></li>
             </ul>
           </div>
         </div>
@@ -48,5 +54,23 @@ export default function Footer() {
         </div>
       </div>
     </footer>
+  );
+}
+
+function FooterLink({ href, children, external }: { href: string; children: React.ReactNode; external?: boolean }) {
+  if (external) {
+    return (
+      <a href={href} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-sm text-[var(--color-text-secondary)] transition-colors duration-200 hover:text-[var(--color-text)]">
+        {children}
+        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+        </svg>
+      </a>
+    );
+  }
+  return (
+    <a href={href} className="text-sm text-[var(--color-text-secondary)] transition-colors duration-200 hover:text-[var(--color-text)]">
+      {children}
+    </a>
   );
 }

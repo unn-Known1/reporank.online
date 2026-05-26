@@ -1,4 +1,4 @@
-export default function BlogEmptyState() {
+export default function BlogEmptyState({ message, title }: { message?: string; title?: string }) {
   return (
     <div className="blog-empty-state">
       <div className="blog-empty-state-icon">
@@ -17,9 +17,9 @@ export default function BlogEmptyState() {
           <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
         </svg>
       </div>
-      <div className="blog-empty-state-title">No blog posts yet</div>
+      <div className="blog-empty-state-title">{title ?? "No blog posts yet"}</div>
       <p className="blog-empty-state-text">
-        Check back soon for insights and analysis about GitHub repositories.
+        {message ?? "Check back soon for insights and analysis about GitHub repositories."}
       </p>
     </div>
   );

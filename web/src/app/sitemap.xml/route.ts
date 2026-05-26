@@ -42,6 +42,12 @@ export async function GET(request: Request) {
     <priority>1.0</priority>
   </url>
   <url>
+    <loc>${escapeXml(`${base}/about`)}</loc>
+    <lastmod>${new Date().toISOString()}</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>${escapeXml(`${base}/faq`)}</loc>
     <lastmod>${new Date().toISOString()}</lastmod>
     <changefreq>monthly</changefreq>
@@ -57,6 +63,12 @@ export async function GET(request: Request) {
     <loc>${escapeXml(`${base}/extension`)}</loc>
     <lastmod>${new Date().toISOString()}</lastmod>
     <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>${escapeXml(`${base}/blog/community`)}</loc>
+    <lastmod>${new Date().toISOString()}</lastmod>
+    <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>
   <url>

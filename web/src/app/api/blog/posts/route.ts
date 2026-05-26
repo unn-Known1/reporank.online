@@ -31,8 +31,12 @@ export async function GET(request: NextRequest) {
   const page = parseInt(searchParams.get("page") || "1", 10);
   const limit = parseInt(searchParams.get("limit") || "20", 10);
   const category = searchParams.get("category") || undefined;
+  const type = searchParams.get("type") as "admin" | "user" | undefined;
+  const author = searchParams.get("author") || undefined;
+  const tag = searchParams.get("tag") || undefined;
+  const sort = searchParams.get("sort") as "latest" | "popular" | undefined;
 
-  const result = await listBlogPosts({ page, limit, category, includeDrafts });
+  const result = await listBlogPosts({ page, limit, category, includeDrafts, type, author, tag, sort });
   return NextResponse.json(result);
 }
 
@@ -42,8 +46,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   }
 
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-  const { allowed, retryAfterMs } = await checkRateLimit(ip, "blog:");
+  const { allowed, retryAfterMs } = await checkRateLimit(user.id, "blog:");
   if (!allowed) {
     return NextResponse.json(
       { error: "Too many requests" },
@@ -55,7 +58,9 @@ export async function POST(request: NextRequest) {
   const result = await createBlogPost(body, user.id);
 
   if (!result.success) {
-    const status = result.errors.some((e: { field: string }) => e.field === "_") ? 500 : 400;
+    const isServerError = result.errors.some((e: { field: string }) => e.field === "_");
+    const isSpam = result.errors.some((e: { field: string }) => e.field === "spam");
+    const status = isSpam ? 403 : isServerError ? 500 : 400;
     return NextResponse.json({ error: "Validation failed", errors: result.errors }, { status });
   }
 

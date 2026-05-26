@@ -4,6 +4,7 @@ import { NextRequest } from "next/server";
 const mockGetUser = vi.hoisted(() => vi.fn());
 const mockUpdateBlogPost = vi.hoisted(() => vi.fn());
 const mockDeleteBlogPost = vi.hoisted(() => vi.fn());
+const mockCheckPostOwnership = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/supabase/server", () => ({
   getUser: mockGetUser,
@@ -14,6 +15,7 @@ vi.mock("@/lib/blog/service", () => ({
   updateBlogPost: mockUpdateBlogPost,
   deleteBlogPost: mockDeleteBlogPost,
   getBlogPostById: vi.fn(),
+  checkPostOwnership: mockCheckPostOwnership,
 }));
 
 async function loadId() {
@@ -38,6 +40,7 @@ describe("PUT /api/blog/posts/[id]", () => {
 
   it("returns 500 for non-existent post", async () => {
     mockGetUser.mockResolvedValue({ id: "user-1" });
+    mockCheckPostOwnership.mockResolvedValue(true);
     mockUpdateBlogPost.mockResolvedValue({ success: false, errors: [{ field: "_", message: "Post not found" }] });
     const { PUT } = await import("@/app/api/blog/posts/[id]/route");
     const req = new NextRequest("http://localhost/api/blog/posts/non-existent-id", {
@@ -51,6 +54,7 @@ describe("PUT /api/blog/posts/[id]", () => {
 
   it("rejects invalid update payload", async () => {
     mockGetUser.mockResolvedValue({ id: "user-1" });
+    mockCheckPostOwnership.mockResolvedValue(true);
     mockUpdateBlogPost.mockResolvedValue({ success: false, errors: [{ field: "title", message: "Title too long" }] });
     const { PUT } = await import("@/app/api/blog/posts/[id]/route");
     const req = new NextRequest("http://localhost/api/blog/posts/fake-id", {
@@ -76,6 +80,7 @@ describe("DELETE /api/blog/posts/[id]", () => {
 
   it("returns 404 for non-existent post", async () => {
     mockGetUser.mockResolvedValue({ id: "user-1" });
+    mockCheckPostOwnership.mockResolvedValue(true);
     mockDeleteBlogPost.mockResolvedValue(false);
     const { DELETE } = await import("@/app/api/blog/posts/[id]/route");
     const req = new NextRequest("http://localhost/api/blog/posts/non-existent-id", { method: "DELETE" });

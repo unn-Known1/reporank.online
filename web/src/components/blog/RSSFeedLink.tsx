@@ -1,9 +1,9 @@
 import Link from "next/link";
 
-export default function RSSFeedLink() {
+export default function RSSFeedLink({ href }: { href?: string }) {
   return (
     <Link
-      href="/blog/feed.xml"
+      href={href ?? "/blog/feed.xml"}
       className="rss-feed-link"
       title="RSS Feed"
     >

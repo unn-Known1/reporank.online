@@ -7,7 +7,10 @@ interface BlogJsonLdProps {
   publishedAt: string;
   updatedAt?: string | null;
   authorName: string;
+  authorUrl?: string | null;
+  authorSameAs?: string | null;
   image?: string | null;
+  readingTimeMinutes?: number;
 }
 
 export default function BlogJsonLd({
@@ -17,9 +20,19 @@ export default function BlogJsonLd({
   publishedAt,
   updatedAt,
   authorName,
+  authorUrl,
+  authorSameAs,
   image,
+  readingTimeMinutes,
 }: BlogJsonLdProps) {
-  const jsonLd = {
+  const author: Record<string, string> = {
+    "@type": "Person",
+    name: authorName,
+  };
+  if (authorUrl) author.url = `${BASE_URL}${authorUrl}`;
+  if (authorSameAs) author.sameAs = authorSameAs;
+
+  const jsonLd: Record<string, any> = {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
     "@id": url,
@@ -29,10 +42,7 @@ export default function BlogJsonLd({
     mainEntityOfPage: { "@type": "WebPage", "@id": url },
     datePublished: publishedAt,
     dateModified: updatedAt ?? publishedAt,
-    author: {
-      "@type": "Person",
-      name: authorName,
-    },
+    author,
     publisher: {
       "@type": "Organization",
       name: "RepoRank",
@@ -44,8 +54,15 @@ export default function BlogJsonLd({
         height: 512,
       },
     },
-    ...(image ? { image: { "@type": "ImageObject", url: image } } : {}),
   };
+
+  if (readingTimeMinutes) {
+    jsonLd.timeRequired = `PT${readingTimeMinutes}M`;
+  }
+
+  if (image) {
+    jsonLd.image = { "@type": "ImageObject", url: image };
+  }
 
   return (
     <script

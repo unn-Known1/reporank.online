@@ -4,7 +4,9 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import AuthButton from "@/components/AuthButton";
 import BlogNavTab from "@/components/blog/BlogNavTab";
+import CommunityNavTab from "@/components/blog/CommunityNavTab";
 import ExtensionNavTab from "@/components/extension/ExtensionNavTab";
+import AboutNavTab from "@/components/about/AboutNavTab";
 import { parseRepoInput } from "@/lib/utils";
 
 function ThemeToggle() {
@@ -131,7 +133,9 @@ export default function Navbar() {
         <div className="flex-1 sm:hidden" />
 
         <div className="flex items-center gap-2">
+          <AboutNavTab />
           <BlogNavTab />
+          <CommunityNavTab />
           <ExtensionNavTab />
           <ThemeToggle />
           <div className="hidden sm:block">
@@ -173,8 +177,14 @@ export default function Navbar() {
               />
             </div>
           </form>
-          <a href="/blog" className="block rounded-lg px-3 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)] transition-colors mb-2">
+          <a href="/about" className="block rounded-lg px-3 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)] transition-colors mb-1">
+            About
+          </a>
+          <a href="/blog" className="block rounded-lg px-3 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)] transition-colors mb-1">
             Blog
+          </a>
+          <a href="/blog/community" className="block rounded-lg px-3 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)] transition-colors mb-2">
+            Community
           </a>
           <div className="flex items-center justify-between">
             {mounted && <AuthButton />}

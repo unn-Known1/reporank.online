@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import type { DashboardItem } from "@/lib/db/db-schema";
 import type { UserRepoCard } from "@/app/api/user/repos/route";
 import { supabaseBrowser } from "@/lib/supabase/client";
@@ -8,6 +8,8 @@ import WatchlistItem from "./WatchlistItem";
 import TrendingView from "./TrendingView";
 import GitHubRepoCard, { GitHubRepoCardSkeleton } from "./GitHubRepoCard";
 import { SkeletonCard } from "./Skeleton";
+import UserBlogEditor from "@/components/blog/UserBlogEditor";
+import BlogProfileEditor from "@/components/blog/BlogProfileEditor";
 
 type Props = {
   initialItems: DashboardItem[];
@@ -20,7 +22,7 @@ type StatusFilter = "all" | "scored" | "unscored" | "needs-review" | "watchliste
 export default function DashboardView({ initialItems, userId }: Props) {
   const [items, setItems] = useState<DashboardItem[]>(initialItems);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"watchlist" | "your-repos" | "discover">("watchlist");
+  const [activeTab, setActiveTab] = useState<"watchlist" | "your-repos" | "discover" | "my-posts">("watchlist");
 
   // Your Repos state
   const [userRepos, setUserRepos] = useState<UserRepoCard[]>([]);
@@ -228,6 +230,8 @@ export default function DashboardView({ initialItems, userId }: Props) {
       )}
 
       {activeTab === "discover" && <TrendingView />}
+
+      {activeTab === "my-posts" && <MyPostsTab userId={userId} />}
     </div>
   );
 }
@@ -239,12 +243,13 @@ function TabNav({
   onTabChange,
 }: {
   activeTab: string;
-  onTabChange: (tab: "watchlist" | "your-repos" | "discover") => void;
+  onTabChange: (tab: "watchlist" | "your-repos" | "discover" | "my-posts") => void;
 }) {
   const tabs = [
     { key: "watchlist", label: "Watchlist" },
     { key: "your-repos", label: "Your Repos" },
     { key: "discover", label: "Discover" },
+    { key: "my-posts", label: "My Posts" },
   ] as const;
 
   return (
@@ -503,6 +508,280 @@ function YourReposTab({
               onWatchlistToggle={onWatchlistToggle}
               onScoreNow={onScoreNow}
             />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Post Editor Wrapper ───────────────────────────────────────────────────
+
+function PostEditorWrapper({ postId, initialTitle, onBack, onSaved }: { postId: string; initialTitle?: string; onBack: () => void; onSaved: () => void }) {
+  const [postData, setPostData] = useState<Record<string, any> | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`/api/blog/posts/${postId}`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (data?.post) {
+          setPostData({
+            title: data.post.title,
+            body: data.post.body,
+            excerpt: data.post.excerpt || "",
+            slug: data.post.slug,
+            status: data.post.status,
+            repos: data.post.repos || [],
+            tags: data.post.tags || [],
+          });
+        }
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [postId]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--color-border)] border-t-[var(--color-text)]" />
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-lg font-semibold text-[var(--color-text)]">
+          Edit{initialTitle ? `: ${initialTitle}` : " Post"}
+        </h2>
+        <button
+          onClick={onBack}
+          className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
+        >
+          &larr; Back
+        </button>
+      </div>
+      <UserBlogEditor
+        postId={postId}
+        initialData={postData ?? undefined}
+        onSaved={onSaved}
+      />
+    </div>
+  );
+}
+
+// ─── My Posts Tab ──────────────────────────────────────────────────────────
+
+interface MyPostSummary {
+  id: string;
+  title: string;
+  slug: string;
+  status: "draft" | "published";
+  word_count: number;
+  created_at: string;
+  published_at: string | null;
+}
+
+function MyPostsTab({ userId }: { userId: string }) {
+  const [posts, setPosts] = useState<MyPostSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [listError, setListError] = useState<string | null>(null);
+  const [showProfile, setShowProfile] = useState(false);
+
+  const fetchPosts = useCallback(async () => {
+    setLoading(true);
+    setListError(null);
+    try {
+      const res = await fetch(`/api/blog/posts?author=${userId}&include_drafts=true&limit=100`);
+      if (res.ok) {
+        const data = await res.json();
+        setPosts(data.posts || []);
+      } else {
+        setListError("Failed to load posts");
+      }
+    } catch {
+      setListError("Network error loading posts");
+    } finally {
+      setLoading(false);
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts]);
+
+  const handleDelete = useCallback(async (id: string) => {
+    if (!confirm("Delete this post?")) return;
+    try {
+      const res = await fetch(`/api/blog/posts/${id}`, { method: "DELETE" });
+      if (res.ok || res.status === 204) {
+        setPosts((prev) => prev.filter((p) => p.id !== id));
+      } else {
+        alert("Failed to delete post");
+      }
+    } catch {
+      alert("Network error deleting post");
+    }
+  }, []);
+
+  const handleStatusToggle = useCallback(async (post: MyPostSummary) => {
+    const newStatus = post.status === "published" ? "draft" : "published";
+    try {
+      const res = await fetch(`/api/blog/posts/${post.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (res.ok) {
+        setPosts((prev) =>
+          prev.map((p) =>
+            p.id === post.id
+              ? { ...p, status: newStatus as "draft" | "published", published_at: newStatus === "published" ? new Date().toISOString() : p.published_at }
+              : p,
+          ),
+        );
+      } else {
+        alert("Failed to update post status");
+      }
+    } catch {
+      alert("Network error updating post");
+    }
+  }, []);
+
+  if (creating) {
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-lg font-semibold text-[var(--color-text)]">New Post</h2>
+          <button
+            onClick={() => setCreating(false)}
+            className="text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
+          >
+            &larr; Back
+          </button>
+        </div>
+        <UserBlogEditor onSaved={() => { setCreating(false); fetchPosts(); }} />
+      </div>
+    );
+  }
+
+  if (editing) {
+    return <PostEditorWrapper postId={editing} initialTitle={posts.find(p => p.id === editing)?.title} onBack={() => setEditing(null)} onSaved={() => { setEditing(null); fetchPosts(); }} />;
+  }
+
+  if (listError) {
+    return (
+      <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center">
+        <p className="text-sm text-red-700">{listError}</p>
+        <button onClick={fetchPosts} className="mt-3 text-sm font-medium text-red-600 hover:underline">
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="space-y-3">
+        {[1, 2].map((i) => (
+          <div key={i} className="rounded-lg border border-[var(--color-border)] p-4">
+            <div className="h-5 w-3/4 animate-pulse rounded bg-[var(--color-surface-elevated)]" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-sm text-[var(--color-text-secondary)]">
+          {posts.length} {posts.length === 1 ? "post" : "posts"}
+        </p>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowProfile(!showProfile)}
+            className="rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-elevated)]"
+          >
+            {showProfile ? "Hide Profile" : "Edit Profile"}
+          </button>
+          <button
+            onClick={() => setCreating(true)}
+            className="rounded-lg bg-[var(--color-primary)] px-3 py-1.5 text-sm font-medium text-white hover:opacity-90"
+          >
+            New Post
+          </button>
+        </div>
+      </div>
+
+      {showProfile && (
+        <div className="mb-6 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+          <BlogProfileEditor onSaved={() => setShowProfile(false)} />
+        </div>
+      )}
+
+      {posts.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-[var(--color-border)] p-8 text-center">
+          <p className="text-sm text-[var(--color-text-secondary)]">
+            You haven&apos;t written any posts yet.
+          </p>
+          <button
+            onClick={() => setCreating(true)}
+            className="mt-3 rounded-lg bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white"
+          >
+            Write your first post
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {posts.map((post) => (
+            <div
+              key={post.id}
+              className="flex items-center justify-between rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3"
+            >
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`inline-flex items-center rounded px-2 py-0.5 text-xs font-medium ${
+                      post.status === "published"
+                        ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                        : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                    }`}
+                  >
+                    {post.status}
+                  </span>
+                  <span className="font-medium text-[var(--color-text)] truncate text-sm">
+                    {post.title}
+                  </span>
+                </div>
+                <div className="mt-0.5 text-xs text-[var(--color-text-muted)]">
+                  /blog/{post.slug} &middot; {post.word_count || 0} words
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 ml-3 shrink-0">
+                <button
+                  onClick={() => handleStatusToggle(post)}
+                  className="rounded px-2 py-1 text-xs font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-elevated)]"
+                >
+                  {post.status === "published" ? "Unpublish" : "Publish"}
+                </button>
+                <button
+                  onClick={() => setEditing(post.id)}
+                  className="rounded px-2 py-1 text-xs font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-elevated)]"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleDelete(post.id)}
+                  className="rounded px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
           ))}
         </div>
       )}
