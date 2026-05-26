@@ -18,9 +18,12 @@ export async function getGitHubToken(): Promise<{ token: string | null; isUserTo
     // Session fetch failed — fall through to app token
   }
 
-  const appToken = process.env.GITHUB_APP_TOKEN;
-  if (!appToken) return { token: null, isUserToken: false };
-  return { token: appToken, isUserToken: false };
+  try {
+    const appToken = requireEnv('GITHUB_APP_TOKEN');
+    return { token: appToken, isUserToken: false };
+  } catch {
+    return { token: null, isUserToken: false };
+  }
 }
 
 /**
