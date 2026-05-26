@@ -12,6 +12,7 @@ export interface BlogPostRepoRow {
 
 export async function getReposByPostId(postId: string): Promise<{ owner: string; name: string }[]> {
   const supabase = await supabaseServer();
+  if (!supabase) return [];
   const { data, error } = await supabase
     .from("blog_post_repos")
     .select("repo_owner, repo_name")

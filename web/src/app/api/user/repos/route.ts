@@ -57,6 +57,9 @@ export async function GET(req: Request) {
     }
 
     const supabase = await supabaseServer();
+    if (!supabase) {
+      return NextResponse.json({ error: "Service unavailable" }, { status: 503 });
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: "Authentication required" }, { status: 401 });
@@ -78,7 +81,7 @@ export async function GET(req: Request) {
       });
     }
 
-    const repos = await fetchViewerRepos(token);
+    const repos = await fetchViewerRepos(token ?? '');
     const enriched = await enrichReposWithDbData(user.id, repos);
 
     cache.set(user.id, { data: enriched, expiresAt: Date.now() + CACHE_TTL_MS });

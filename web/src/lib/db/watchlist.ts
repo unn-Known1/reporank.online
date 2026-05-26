@@ -36,6 +36,7 @@ export async function removeFromWatchlist(userId: string, repoId: string) {
 
 export async function getWatchlist(userId: string) {
   const supabase = await supabaseServer();
+  if (!supabase) return [];
   const { data, error } = await supabase
     .from("watchlist_items")
     .select("*, repos(*)")
@@ -51,6 +52,7 @@ export async function getWatchlist(userId: string) {
 
 export async function getWatchlistItem(userId: string, repoId: string) {
   const supabase = await supabaseServer();
+  if (!supabase) return null;
   const { data, error } = await supabase
     .from("watchlist_items")
     .select("*")

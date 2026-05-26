@@ -5,6 +5,7 @@ import { requireEnv } from "@/lib/env";
 
 export async function getRepoByOwnerName(owner: string, name: string) {
   const supabase = await supabaseServer();
+  if (!supabase) return null;
   const { data, error } = await supabase
     .from("repos")
     .select("*")

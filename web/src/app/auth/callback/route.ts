@@ -15,6 +15,10 @@ export async function GET(req: Request) {
 
   if (code) {
     const supabase = await supabaseServer();
+    if (!supabase) {
+      const origin = new URL(req.url).origin;
+      return NextResponse.redirect(`${origin}/?error=service_unavailable`);
+    }
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
       const cookieStore = await cookies();

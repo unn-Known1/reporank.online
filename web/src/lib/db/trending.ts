@@ -7,6 +7,7 @@ export async function getTrendingSnapshot(
   sort: "trending" | "top_rated" = "trending"
 ): Promise<TrendingEntry[]> {
   const supabase = await supabaseServer();
+  if (!supabase) return [];
   const { data, error } = await supabase
     .from("trending_cache")
     .select("data, generated_at")

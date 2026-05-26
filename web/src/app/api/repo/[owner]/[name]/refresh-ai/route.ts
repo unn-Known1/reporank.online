@@ -64,7 +64,7 @@ export async function POST(req: Request, { params }: { params: { owner: string; 
     // generateAndStoreAiReview handles upsert internally (update existing or insert new)
     const { token, isUserToken } = await getGitHubToken();
     console.log(`[refresh-ai] ${params.owner}/${params.name}: tokenSource=${isUserToken ? "user" : "app"}`);
-    await maybeGenerateAiReview(repo.id, params.owner, params.name, { token });
+    await maybeGenerateAiReview(repo.id, params.owner, params.name, { token: token ?? undefined });
 
     return NextResponse.json({ success: true });
   } finally {

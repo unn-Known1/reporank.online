@@ -61,8 +61,10 @@ export async function POST(req: Request) {
       let triggeredByUserId: string | undefined;
       try {
         const supabase = await supabaseServer();
-        const { data: { user } } = await supabase.auth.getUser();
-        triggeredByUserId = user?.id;
+        if (supabase) {
+          const { data: { user } } = await supabase.auth.getUser();
+          triggeredByUserId = user?.id;
+        }
       } catch {
         // Outside request scope (e.g. tests) — skip userId, worker uses app token
       }
@@ -80,7 +82,7 @@ export async function POST(req: Request) {
     let rawRepo: any;
     try {
       const result = await dedupe(dedupKey, () =>
-        upsertRepoFromGitHub(parsed.owner, parsed.name, token)
+        upsertRepoFromGitHub(parsed.owner, parsed.name, token ?? undefined)
       );
       dbRepo = result.dbRepo;
       rawRepo = result.rawRepo;
@@ -103,7 +105,7 @@ export async function POST(req: Request) {
     }
 
     await computeAndStoreScore(dbRepo.id, rawRepo, parsed.owner, parsed.name);
-    await maybeGenerateAiReview(dbRepo.id, dbRepo.owner, dbRepo.name, { rawRepo, token });
+    await maybeGenerateAiReview(dbRepo.id, dbRepo.owner, dbRepo.name, { rawRepo, token: token ?? undefined });
 
     return NextResponse.json({ repo: dbRepo, tokenSource }, { status: 200 });
   } catch (err) {

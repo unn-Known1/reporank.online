@@ -7,6 +7,7 @@ type SiteStats = { repos: number; reviews: number; ai_reviews: number; watchlist
 
 async function getSiteStats(): Promise<SiteStats> {
   const supabase = await supabaseServer();
+  if (!supabase) return { repos: 0, reviews: 0, ai_reviews: 0, watchlists: 0, trending: 0, visitors: 0 };
   const statsPromise = supabase.from("site_stats").select("repos_scored_count,reviews_count,ai_reviews_count,visitor_count").eq("id", "landing").maybeSingle();
   const [repoCount, reviewCount, aiCount] = await Promise.all([
     supabase.from("score_runs").select("*", { count: "exact", head: true }),

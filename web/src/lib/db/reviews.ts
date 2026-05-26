@@ -62,6 +62,7 @@ export async function getReviewsByRepo(
   offset = 0
 ): Promise<{ reviews: Review[]; total: number }> {
   const supabase = await supabaseServer();
+  if (!supabase) return { reviews: [], total: 0 };
   const countQuery = supabase
     .from("reviews")
     .select("*", { count: "exact", head: true })
@@ -103,6 +104,7 @@ export async function createReview(
   githubUsername?: string
 ): Promise<{ review: Review | null; error: string | null }> {
   const supabase = await supabaseServer();
+  if (!supabase) return { review: null, error: "Database not configured" };
 
   const spamFlagged = detectSpam(body);
 
@@ -151,6 +153,7 @@ export async function createReview(
  */
 export async function getReviewSummary(repoId: string): Promise<{ count: number; avg_helpful: number }> {
   const supabase = await supabaseServer();
+  if (!supabase) return { count: 0, avg_helpful: 0 };
 
   const { count, error: countError } = await supabase
     .from("reviews")
@@ -180,6 +183,7 @@ export async function getReviewSummary(repoId: string): Promise<{ count: number;
  */
 export async function getReview(reviewId: string): Promise<{ user_id: string } | null> {
   const supabase = await supabaseServer();
+  if (!supabase) return null;
   const { data, error } = await supabase
     .from("reviews")
     .select("user_id")
@@ -199,6 +203,7 @@ export async function getVote(
   reviewId: string
 ): Promise<"helpful" | "unhelpful" | null> {
   const supabase = await supabaseServer();
+  if (!supabase) return null;
 
   const { data, error } = await supabase
     .from("review_votes")
@@ -221,6 +226,7 @@ export async function upsertVote(
   voteType: "helpful" | "unhelpful"
 ): Promise<void> {
   const supabase = await supabaseServer();
+  if (!supabase) return;
 
   const { error } = await supabase
     .from("review_votes")
@@ -248,6 +254,7 @@ export async function markReviewOutdated(
   userId: string
 ): Promise<void> {
   const supabase = await supabaseServer();
+  if (!supabase) return;
 
   const { error } = await supabase
     .from("reviews")

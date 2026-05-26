@@ -11,6 +11,7 @@ export interface BlogCategoryRow {
 
 export async function listCategories(): Promise<BlogCategoryRow[]> {
   const supabase = await supabaseServer();
+  if (!supabase) return [];
   const { data, error } = await supabase
     .from("blog_categories")
     .select("*")
@@ -24,6 +25,7 @@ export async function listCategories(): Promise<BlogCategoryRow[]> {
 
 export async function getCategoryById(id: string): Promise<BlogCategoryRow | null> {
   const supabase = await supabaseServer();
+  if (!supabase) return null;
   const { data, error } = await supabase
     .from("blog_categories")
     .select("*")
@@ -35,6 +37,7 @@ export async function getCategoryById(id: string): Promise<BlogCategoryRow | nul
 
 export async function getCategoryBySlug(slug: string): Promise<BlogCategoryRow | null> {
   const supabase = await supabaseServer();
+  if (!supabase) return null;
   const { data, error } = await supabase
     .from("blog_categories")
     .select("*")

@@ -40,6 +40,7 @@ export async function computeAndStoreScore(repoId: string, rawRepo: any, owner?:
 
 export async function getLatestScore(repoId: string) {
   const supabase = await supabaseServer();
+  if (!supabase) return null;
   const { data, error } = await supabase
     .from("score_runs")
     .select("*")

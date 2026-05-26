@@ -58,6 +58,7 @@ export interface BlogPostDetail extends BlogPostListItem {
 
 export async function listPublishedPosts(params: BlogPostListParams = {}): Promise<{ posts: BlogPostListItem[]; pagination: PaginationResult }> {
   const supabase = await supabaseServer();
+  if (!supabase) return { posts: [], pagination: { page: params.page ?? 1, limit: Math.min(params.limit ?? 20, 50), total: 0, total_pages: 0 } };
   const page = params.page ?? 1;
   const limit = Math.min(params.limit ?? 20, 50);
   const from = (page - 1) * limit;
@@ -115,6 +116,7 @@ export async function listPublishedPosts(params: BlogPostListParams = {}): Promi
 
 async function getReposForPost(postId: string): Promise<{ owner: string; name: string }[]> {
   const supabase = await supabaseServer();
+  if (!supabase) return [];
   const { data } = await supabase
     .from("blog_post_repos")
     .select("repo_owner, repo_name")
@@ -125,6 +127,7 @@ async function getReposForPost(postId: string): Promise<{ owner: string; name: s
 
 export async function getPostBySlug(slug: string): Promise<BlogPostDetail | null> {
   const supabase = await supabaseServer();
+  if (!supabase) return null;
   const { data, error } = await supabase
     .from("blog_posts")
     .select(`
@@ -161,6 +164,7 @@ export async function getPostBySlug(slug: string): Promise<BlogPostDetail | null
 
 export async function getPostById(id: string): Promise<BlogPostDetail | null> {
   const supabase = await supabaseServer();
+  if (!supabase) return null;
   const { data, error } = await supabase
     .from("blog_posts")
     .select(`
@@ -299,6 +303,7 @@ export async function deletePost(id: string): Promise<boolean> {
 
 export async function getAllPublishedSlugs(): Promise<{ slug: string; updated_at: string }[]> {
   const supabase = await supabaseServer();
+  if (!supabase) return [];
   const { data } = await supabase
     .from("blog_posts")
     .select("slug, updated_at")

@@ -7,6 +7,7 @@ export default async function DashboardPage() {
   if (!user) redirect("/");
 
   const supabase = await supabaseServer();
+  if (!supabase) return redirect("/");
   const { data: watchlist } = await supabase
     .from("watchlist_items")
     .select("*, repos(*)")

@@ -13,6 +13,7 @@ export async function getDashboardData(userId: string): Promise<{
   }
 
   const supabase = await supabaseServer();
+  if (!supabase) return { items: [], total: 0 };
   const repoIds = watchlist.map((w) => w.repo_id);
 
   // Batch-fetch latest scores for all watched repos in one query

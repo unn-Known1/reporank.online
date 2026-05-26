@@ -7,6 +7,7 @@ import { getGitHubToken } from "@/lib/github/token";
 
 export async function GET() {
   const supabase = await supabaseServer();
+  if (!supabase) return NextResponse.json({ error: "Service unavailable" }, { status: 503 });
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
 
@@ -16,6 +17,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const supabase = await supabaseServer();
+  if (!supabase) return NextResponse.json({ error: "Service unavailable" }, { status: 503 });
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
 
@@ -37,7 +39,7 @@ export async function POST(req: NextRequest) {
     repoId = repo.id;
   } else {
     const { token } = await getGitHubToken();
-    const { dbRepo } = await upsertRepoFromGitHub(owner, name, token);
+    const { dbRepo } = await upsertRepoFromGitHub(owner, name, token ?? undefined);
     if (!dbRepo) {
       return NextResponse.json({
         error: "Repo not found. Check the owner/repo name and try again.",
@@ -57,6 +59,7 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   const supabase = await supabaseServer();
+  if (!supabase) return NextResponse.json({ error: "Service unavailable" }, { status: 503 });
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
 

@@ -7,7 +7,7 @@ export async function supabaseServer() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) {
-    throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY env vars");
+    return null;
   }
   return createServerClient(url, key,
     {
@@ -29,6 +29,7 @@ export async function supabaseServer() {
 
 export async function getUser() {
   const supabase = await supabaseServer();
+  if (!supabase) return null;
   const { data, error } = await supabase.auth.getUser();
   if (error || !data?.user) return null;
   return data.user;

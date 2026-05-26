@@ -181,7 +181,11 @@ export default async function RepoPage({ params }: PageProps) {
   const { owner, name } = params;
 
   const supabase = await supabaseServer();
-  const { data: { user } } = await supabase.auth.getUser();
+  let user = null;
+  if (supabase) {
+    const { data: { user: u } } = await supabase.auth.getUser();
+    user = u;
+  }
   const currentUserGitHubUsername = user?.user_metadata?.user_name as string | undefined;
   const { isUserToken } = await getGitHubToken();
   const tokenSource = isUserToken ? "user" : "app";
