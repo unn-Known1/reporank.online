@@ -45,26 +45,3 @@ export async function getUserTokenFromSession(userId: string): Promise<string | 
     return null
   }
 }
-
-/**
- * Look up a user's GitHub provider_token from the auth.sessions table
- * using the service_role admin client. Used by queue workers where no
- * cookie-based session exists.
- *
- * Returns null if the user has no active session or the lookup fails.
- */
-export async function getUserTokenFromSession(userId: string): Promise<string | null> {
-  try {
-    const { data: token, error } = await supabaseAdmin()
-      .rpc('get_user_provider_token', { p_user_id: userId })
-
-    if (error) {
-      console.warn('[token] RPC get_user_provider_token failed:', error.message)
-      return null
-    }
-
-    return token ?? null
-  } catch {
-    return null
-  }
-}
