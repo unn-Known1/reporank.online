@@ -20,6 +20,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ error: "Cannot vote on your own review" }, { status: 400 });
   }
 
-  await upsertVote(user.id, id, vote);
+  const result = await upsertVote(user.id, id, vote);
+  if (!result.ok) return NextResponse.json({ error: result.error ?? "Failed to save vote" }, { status: 500 });
   return NextResponse.json({ ok: true }, { status: 200 });
 }

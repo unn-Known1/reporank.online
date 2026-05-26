@@ -41,6 +41,24 @@ function cleanupLocalBuckets(now: number) {
 }
 
 // ── Tier 1: Redis (sorted-set sliding window) ────────────────────────────────
+
+// Lua script for atomic check-and-add
+const RATE_LIMIT_SCRIPT = `
+local key = KEYS[1]
+local now = tonumber(ARGV[1])
+local window = tonumber(ARGV[2])
+local limit = tonumber(ARGV[3])
+redis.call('ZREMRANGEBYSCORE', key, 0, now - window)
+local count = redis.call('ZCARD', key)
+if count >= limit then
+  local oldest = redis.call('ZRANGE', key, 0, 0, 'WITHSCORES')
+  return {0, window - (now - tonumber(oldest[2]))}
+end
+redis.call('ZADD', key, now, now)
+redis.call('EXPIRE', key, math.ceil(window / 1000))
+return {1, 0}
+`;
+
 async function redisCheck(
   redis: Redis,
   bucket: string,
@@ -49,27 +67,19 @@ async function redisCheck(
 ): Promise<{ allowed: boolean; retryAfterMs: number }> {
   const key = `${REDIS_PREFIX}${bucket}`;
 
-  // Clean expired entries
-  await redis.zremrangebyscore(key, 0, now - WINDOW_MS);
+  const result = await redis.eval(
+    RATE_LIMIT_SCRIPT,
+    1,
+    key,
+    now,
+    WINDOW_MS,
+    limit,
+  ) as [number, number];
 
-  // Check current count (without adding the current request)
-  const count = await redis.zcard(key);
-
-  if (count >= limit) {
-    const oldest = await redis.zrange(key, 0, 0, 'WITHSCORES');
-    const oldestTimestamp = parseInt(oldest[1] ?? '0', 10);
-    const retryAfterMs = WINDOW_MS - (now - oldestTimestamp);
-    return { allowed: false, retryAfterMs: Math.max(0, retryAfterMs) };
-  }
-
-  // Add current request and set expiry
-  await redis
-    .multi()
-    .zadd(key, now, `${now}-${Math.random()}`)
-    .expire(key, Math.ceil(WINDOW_MS / 1000))
-    .exec();
-
-  return { allowed: true, retryAfterMs: 0 };
+  return {
+    allowed: result[0] === 1,
+    retryAfterMs: Math.max(0, result[1]),
+  };
 }
 
 // ── Tier 2: Supabase RPC (database-backed, shared across instances) ──────────

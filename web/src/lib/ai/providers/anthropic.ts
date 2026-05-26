@@ -8,6 +8,7 @@ export async function generateWithAnthropic(
   systemPrompt: string,
   maxTokens = 1024,
   modelOverride?: string,
+  externalSignal?: AbortSignal,
 ): Promise<{ text: string; model: string } | null> {
   const apiKey = requireEnv("ANTHROPIC_API_KEY");
   const model = modelOverride ?? process.env.CLAUDE_MODEL ?? process.env.ANTHROPIC_MODEL ?? DEFAULT_MODEL;
@@ -18,11 +19,14 @@ export async function generateWithAnthropic(
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 60000);
+      const signal = externalSignal
+        ? AbortSignal.any([controller.signal, externalSignal])
+        : controller.signal;
 
       try {
         const res = await fetch(API_URL, {
           method: "POST",
-          signal: controller.signal,
+          signal,
           headers: {
             "x-api-key": apiKey,
             "anthropic-version": "2023-06-01",

@@ -11,7 +11,7 @@ export function detectHasTests(repo: any): boolean {
       if (parsed.scripts?.test || parsed.scripts?.["test:unit"]) return true;
     } catch {}
   }
-  return !!(repo.testsDir?.object || repo.specDir?.object);
+  return (repo.testsDir?.entries?.length ?? 0) > 0 || (repo.specDir?.entries?.length ?? 0) > 0;
 }
 
 export function computeReadmeQuality(text: string | null): number {
@@ -26,9 +26,9 @@ export function computeReadmeQuality(text: string | null): number {
     Math.round(
       (length / 50) * 0.2 +
         sections * 10 * 0.5 +
-        (hasInstall ? 15 : 0) * 0.15 +
-        (hasUsage ? 15 : 0) * 0.075 +
-        (hasExample ? 15 : 0) * 0.075
+        (hasInstall ? 15 : 0) +
+        (hasUsage ? 15 : 0) +
+        (hasExample ? 10 : 0)
     )
   );
 }

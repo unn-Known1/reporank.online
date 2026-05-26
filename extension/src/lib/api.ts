@@ -38,7 +38,7 @@ export async function fetchScore(platform: string, owner: string, name: string) 
 export async function queueLookup(url: string) {
   return request<{ jobId?: string }>("/api/repo/lookup", {
     method: "POST",
-    body: JSON.stringify({ url }),
+    body: JSON.stringify({ input: url }),
   })
 }
 

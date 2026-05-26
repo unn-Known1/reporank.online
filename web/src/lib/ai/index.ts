@@ -1,7 +1,7 @@
 import { generateWithAnthropic } from "./providers/anthropic";
 import { generateWithOpenAI } from "./providers/openai";
 
-type ProviderFn = (prompt: string, system: string, max: number, model?: string) => Promise<{ text: string; model: string } | null>;
+type ProviderFn = (prompt: string, system: string, max: number, model?: string, signal?: AbortSignal) => Promise<{ text: string; model: string } | null>;
 type ProviderResult = { text: string; model: string; provider: string };
 
 const PROVIDERS: Record<string, ProviderFn> = {
@@ -42,7 +42,7 @@ export async function generateAiReviewText(
     signal?.addEventListener("abort", onExternalAbort, { once: true });
 
     try {
-      const result = await fn(prompt, system ?? systemPrompt, maxTokens, model);
+      const result = await fn(prompt, system ?? systemPrompt, maxTokens, model, controller.signal);
       return result ? { ...result, provider: resolved } : null;
     } finally {
       clearTimeout(timeoutId);

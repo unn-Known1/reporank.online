@@ -3,14 +3,12 @@ import { getRelatedRepos } from "@/lib/db/repos";
 
 export default async function RelatedRepos({
   language,
-  owner,
-  name,
+  repoId,
 }: {
   language: string | null;
-  owner: string;
-  name: string;
+  repoId: string;
 }) {
-  const repos = await getRelatedRepos(language, owner, name, 5);
+  const repos = await getRelatedRepos(language, repoId, 5);
   if (repos.length === 0) return null;
 
   return (

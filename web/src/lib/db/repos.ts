@@ -68,14 +68,13 @@ export async function getRecentRepos(limit = 100, offset = 0) {
   return data ?? [];
 }
 
-export async function getRelatedRepos(language: string | null, excludeOwner: string, excludeName: string, limit = 5) {
+export async function getRelatedRepos(language: string | null, excludeRepoId: string, limit = 5) {
   const supabase = supabaseAdmin();
   let query = supabase
     .from("repos")
     .select("id, owner, name, full_name, description, language, stars, forks")
     .not("last_fetched_at", "is", null)
-    .neq("owner", excludeOwner)
-    .neq("name", excludeName)
+    .neq("id", excludeRepoId)
     .order("stars", { ascending: false })
     .limit(limit);
   if (language) {

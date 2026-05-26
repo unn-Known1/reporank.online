@@ -393,7 +393,7 @@ export default async function RepoPage({ params }: PageProps) {
       </div>
 
       <Suspense fallback={null}>
-        <RelatedRepos language={repo.language} owner={repo.owner} name={repo.name} />
+        <RelatedRepos language={repo.language} repoId={repo.id} />
       </Suspense>
 
       <div id="review-section" className="mt-8">

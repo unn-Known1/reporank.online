@@ -208,7 +208,7 @@ async function generateAndStoreAiReview(
       new Date(r.publishedAt) > new Date(Date.now() - 365 * 24 * 60 * 60 * 1000)
   ).length;
   const contributorCount = repo.mentionableUsers?.totalCount ?? 0;
-  const commitCount = repo.defaultBranchRef?.target?.history?.nodes?.length ?? 0;
+  const commitCount = repo.defaultBranchRef?.target?.history?.totalCount ?? repo.defaultBranchRef?.target?.history?.nodes?.length ?? 0;
   const dependentsCount = repo.dependentsCount ?? 0;
 
   const prompt = `You are RepoRank's AI analysis engine. Analyze this GitHub repository with emphasis on three dimensions: adoption, license/legal, and documentation. Respond with ONLY valid JSON (no markdown, no explanation).
@@ -348,13 +348,6 @@ Respond with this JSON (all fields required):
     return;
   }
 
-  // Check for existing review to update instead of insert (prevents stale row accumulation)
-  const { data: existing } = await supabase
-    .from("ai_reviews")
-    .select("id")
-    .eq("repo_id", repoId)
-    .maybeSingle();
-
   const reviewData = {
     repo_id: repoId,
     generated_at: new Date().toISOString(),
@@ -370,23 +363,13 @@ Respond with this JSON (all fields required):
     injection_flagged,
   };
 
-  if (existing) {
-    const { error: updateError } = await supabase
-      .from("ai_reviews")
-      .update(reviewData)
-      .eq("id", existing.id);
+  // Upsert on repo_id unique constraint — atomic, no TOCTOU race
+  const { error: upsertError } = await supabase
+    .from("ai_reviews")
+    .upsert(reviewData, { onConflict: "repo_id" });
 
-    if (updateError) {
-      console.warn("[db] generateAndStoreAiReview update:", updateError);
-    }
-  } else {
-    const { error: insertError } = await supabase
-      .from("ai_reviews")
-      .insert(reviewData);
-
-    if (insertError) {
-      console.warn("[db] generateAndStoreAiReview insert:", insertError);
-    }
+  if (upsertError) {
+    console.warn("[db] generateAndStoreAiReview upsert:", upsertError);
   }
 }
 

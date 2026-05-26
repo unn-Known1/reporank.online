@@ -158,7 +158,8 @@ export async function getReviewSummary(repoId: string): Promise<{ count: number;
   const { count, error: countError } = await supabase
     .from("reviews")
     .select("*", { count: "exact", head: true })
-    .eq("repo_id", repoId);
+    .eq("repo_id", repoId)
+    .eq("spam_flagged", false);
 
   if (countError) return { count: 0, avg_helpful: 0 };
 
@@ -224,9 +225,9 @@ export async function upsertVote(
   userId: string,
   reviewId: string,
   voteType: "helpful" | "unhelpful"
-): Promise<void> {
+): Promise<{ ok: boolean; error?: string }> {
   const supabase = await supabaseServer();
-  if (!supabase) return;
+  if (!supabase) return { ok: false, error: "Database not configured" };
 
   const { error } = await supabase
     .from("review_votes")
@@ -239,8 +240,11 @@ export async function upsertVote(
       { onConflict: "review_id,user_id" }
     );
 
-  // Silently ignore errors — caller can decide if they care
-  if (error) return;
+  if (error) {
+    console.warn("[db] upsertVote:", error);
+    return { ok: false, error: error.message };
+  }
+  return { ok: true };
 }
 
 // Alias for backward compatibility

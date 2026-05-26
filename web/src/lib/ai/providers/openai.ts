@@ -8,6 +8,7 @@ export async function generateWithOpenAI(
   systemPrompt: string,
   maxTokens = 1024,
   modelOverride?: string,
+  externalSignal?: AbortSignal,
 ): Promise<{ text: string; model: string } | null> {
   const apiKey = requireEnv("OPENAI_API_KEY");
   const baseUrl = (process.env.OPENAI_BASE_URL ?? DEFAULT_BASE_URL).replace(/\/+$/, "");
@@ -17,11 +18,14 @@ export async function generateWithOpenAI(
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 60000);
+      const signal = externalSignal
+        ? AbortSignal.any([controller.signal, externalSignal])
+        : controller.signal;
 
       try {
         const res = await fetch(`${baseUrl}/chat/completions`, {
           method: "POST",
-          signal: controller.signal,
+          signal,
           headers: {
             Authorization: `Bearer ${apiKey}`,
             "content-type": "application/json",

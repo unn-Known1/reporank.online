@@ -39,6 +39,12 @@ query RepoFactors($owner: String!, $name: String!, $since6mo: GitTimestamp!) {
     packageJson: object(expression: "HEAD:package.json") {
       ... on Blob { text }
     }
+    testsDir: object(expression: "HEAD:test") {
+      ... on Tree { entries { name } }
+    }
+    specDir: object(expression: "HEAD:spec") {
+      ... on Tree { entries { name } }
+    }
     workflowsDir: object(expression: "HEAD:.github/workflows") {
       ... on Tree { entries { name } }
     }

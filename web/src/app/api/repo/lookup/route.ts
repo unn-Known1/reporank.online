@@ -53,7 +53,7 @@ export async function POST(req: Request) {
       if (existing?.last_fetched_at) {
         const ageHours = (Date.now() - new Date(existing.last_fetched_at).getTime()) / 3600000;
         if (ageHours < 24) {
-          return NextResponse.json({ status: "cached", repoId: existing.id, tokenSource: "app" as const }, { status: 200 });
+          return NextResponse.json({ status: "cached", repoId: existing.id, tokenSource }, { status: 200 });
         }
       }
 
@@ -73,7 +73,7 @@ export async function POST(req: Request) {
         name: parsed.name,
         triggeredByUserId,
       });
-      return NextResponse.json({ status: "queued", jobId: job.id, tokenSource: "app" as const }, { status: 202 });
+      return NextResponse.json({ status: "queued", jobId: job.id, tokenSource }, { status: 202 });
     }
 
     // Fallback: synchronous processing
