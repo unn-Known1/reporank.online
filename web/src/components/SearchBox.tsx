@@ -6,6 +6,16 @@ import { parseRepoInput } from "@/lib/utils";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
 type RecentSearch = { owner: string; name: string; searchedAt: string };
+type SearchResult = {
+  owner: string;
+  name: string;
+  fullName: string;
+  description: string | null;
+  stars: number;
+  language: string | null;
+  topics: string[];
+  avatarUrl: string;
+};
 
 function timeAgo(dateStr: string): string {
   const now = Date.now();
@@ -20,6 +30,11 @@ function timeAgo(dateStr: string): string {
   if (days === 1) return "yesterday";
   if (days < 30) return `${days}d ago`;
   return new Date(dateStr).toLocaleDateString();
+}
+
+function formatStars(n: number): string {
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
+  return String(n);
 }
 
 const STORAGE_KEY = "reporank:recent-searches";
@@ -49,9 +64,14 @@ export default function SearchBox() {
   const [recent, setRecent] = useState<RecentSearch[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState("");
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const blurTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const searchAbortRef = useRef<AbortController | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   const handleGitHubSignIn = useCallback(async () => {
     setSigningIn(true);
@@ -95,6 +115,14 @@ export default function SearchBox() {
     setSignInRequired(false);
     const parsed = parseRepoInput(searchValue);
     if (!parsed) {
+      if (searchResults.length > 0) {
+        const r = searchResults[0];
+        setValue(`${r.owner}/${r.name}`);
+        setShowDropdown(false);
+        setActiveIndex(-1);
+        handleSubmit(`${r.owner}/${r.name}`);
+        return;
+      }
       setError("Enter a valid GitHub URL or owner/repo");
       return;
     }
@@ -135,23 +163,63 @@ export default function SearchBox() {
     } finally {
       setLoading(false);
     }
-  }, [value, router, addToRecent]);
+  }, [value, router, addToRecent, searchResults]);
 
   const recentFiltered = useMemo(
     () =>
       recent.filter((r) => {
         if (!value) return true;
-        return `${r.owner}/${r.name}`.toLowerCase().startsWith(value.toLowerCase());
+        return `${r.owner}/${r.name}`.toLowerCase().includes(value.toLowerCase());
       }),
     [recent, value]
   );
 
+  const totalItems = searchResults.length + recentFiltered.length;
+
+  function getItem(index: number): { type: "search" | "recent"; data: SearchResult | RecentSearch } | null {
+    if (index < searchResults.length) {
+      return { type: "search", data: searchResults[index] };
+    }
+    const recentIndex = index - searchResults.length;
+    if (recentIndex < recentFiltered.length) {
+      return { type: "recent", data: recentFiltered[recentIndex] };
+    }
+    return null;
+  }
+
+  function selectItem(index: number) {
+    const item = getItem(index);
+    if (!item) return;
+    if (item.type === "search") {
+      const r = item.data as SearchResult;
+      const val = `${r.owner}/${r.name}`;
+      setValue(val);
+      setShowDropdown(false);
+      setActiveIndex(-1);
+      handleSubmit(val);
+    } else {
+      const r = item.data as RecentSearch;
+      const val = `${r.owner}/${r.name}`;
+      setValue(val);
+      setShowDropdown(false);
+      setActiveIndex(-1);
+      handleSubmit(val);
+    }
+  }
+
   function handleFocus() {
     clearTimeout(blurTimeoutRef.current);
-    if (recent.length > 0) {
+    const hasItems = totalItems > 0;
+    if (hasItems) {
       setShowDropdown(true);
     }
   }
+
+  useEffect(() => {
+    if (searching || searchResults.length > 0 || recentFiltered.length > 0) {
+      setShowDropdown(true);
+    }
+  }, [searching, searchResults, recentFiltered]);
 
   function handleBlur() {
     blurTimeoutRef.current = setTimeout(() => setShowDropdown(false), 200);
@@ -160,31 +228,33 @@ export default function SearchBox() {
   function handleKeyDown(e: React.KeyboardEvent) {
     if (!showDropdown && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
       e.preventDefault();
-      if (recentFiltered.length > 0) {
+      if (totalItems > 0) {
         setShowDropdown(true);
-        setActiveIndex(e.key === "ArrowDown" ? 0 : recentFiltered.length - 1);
+        setActiveIndex(e.key === "ArrowDown" ? 0 : totalItems - 1);
       }
       return;
     }
     if (e.key === "ArrowDown") {
       e.preventDefault();
-      setActiveIndex((prev) => (prev < recentFiltered.length - 1 ? prev + 1 : 0));
+      setActiveIndex((prev) => (prev < totalItems - 1 ? prev + 1 : 0));
       return;
     }
     if (e.key === "ArrowUp") {
       e.preventDefault();
-      setActiveIndex((prev) => (prev > 0 ? prev - 1 : recentFiltered.length - 1));
+      setActiveIndex((prev) => (prev > 0 ? prev - 1 : totalItems - 1));
       return;
     }
-    if (e.key === "Enter" && activeIndex >= 0 && activeIndex < recentFiltered.length) {
-      e.preventDefault();
-      const item = recentFiltered[activeIndex];
-      const val = `${item.owner}/${item.name}`;
-      setValue(val);
-      setShowDropdown(false);
-      setActiveIndex(-1);
-      handleSubmit(val);
-      return;
+    if (e.key === "Enter") {
+      if (activeIndex >= 0 && activeIndex < totalItems) {
+        e.preventDefault();
+        selectItem(activeIndex);
+        return;
+      }
+      if (searchResults.length > 0) {
+        e.preventDefault();
+        selectItem(0);
+        return;
+      }
     }
     if (e.key === "Escape") {
       setShowDropdown(false);
@@ -192,6 +262,58 @@ export default function SearchBox() {
       inputRef.current?.blur();
     }
   }
+
+  useEffect(() => {
+    const isExactRepo = parseRepoInput(value) !== null;
+
+    if (!value || value.length < 2 || isExactRepo) {
+      setSearchResults([]);
+      setSearching(false);
+      setSearchError("");
+      return;
+    }
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (searchAbortRef.current) searchAbortRef.current.abort();
+
+    setSearching(true);
+    setSearchError("");
+
+    debounceRef.current = setTimeout(async () => {
+      const controller = new AbortController();
+      searchAbortRef.current = controller;
+
+      try {
+        const res = await fetch(`/api/repo/search?q=${encodeURIComponent(value)}`, {
+          signal: controller.signal,
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(body?.error || `Search failed (${res.status})`);
+        }
+        const json = await res.json();
+        if (json.items && Array.isArray(json.items)) {
+          setSearchResults(json.items);
+        }
+      } catch (err: any) {
+        if (err?.name !== "AbortError") {
+          setSearchError(err?.message || "Search failed");
+        }
+      } finally {
+        setSearching(false);
+      }
+    }, 300);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      if (searchAbortRef.current) searchAbortRef.current.abort();
+    };
+  }, [value]);
+
+  const showRecent = recentFiltered.length > 0;
+  const showSearch = searchResults.length > 0;
+  const showEmpty = !searching && !searchError && !showSearch && value.length >= 2 && !parseRepoInput(value);
+  const showDropdownContent = showDropdown && (showSearch || showRecent || searching || !!searchError || showEmpty);
 
   return (
     <form
@@ -219,11 +341,11 @@ export default function SearchBox() {
               onFocus={handleFocus}
               onBlur={handleBlur}
               onKeyDown={handleKeyDown}
-              placeholder="owner/repo or full GitHub URL"
+              placeholder="Search repos or enter owner/repo..."
               className="w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] py-3.5 pl-12 pr-12 text-base text-[var(--color-text)] placeholder-[var(--color-text-muted)] transition-all duration-200 focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/15"
               aria-label="Search repos"
               role="combobox"
-              aria-expanded={showDropdown && recentFiltered.length > 0}
+              aria-expanded={showDropdownContent}
               aria-controls="search-listbox"
               aria-activedescendant={activeIndex >= 0 ? `search-option-${activeIndex}` : undefined}
               aria-autocomplete="list"
@@ -247,50 +369,142 @@ export default function SearchBox() {
             )}
           </div>
 
-          {showDropdown && recentFiltered.length > 0 && (
+          {showDropdownContent && (
             <div
               id="search-listbox"
               role="listbox"
-              aria-label="Recent searches"
+              aria-label="Search results"
               onMouseMove={() => { if (activeIndex !== -1) setActiveIndex(-1); }}
-              className="absolute left-0 right-0 top-full z-dropdown mt-2 overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-elevated backdrop-blur-xl"
+              className="absolute left-0 right-0 top-full z-dropdown mt-2 max-h-96 overflow-y-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-elevated backdrop-blur-xl"
             >
-              <div className="border-b border-[var(--color-border)] px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
-                Recent searches
-              </div>
-              {recentFiltered.map((r, i) => (
-                <button
-                  key={`${r.owner}/${r.name}`}
-                  id={`search-option-${i}`}
-                  role="option"
-                  aria-selected={i === activeIndex}
-                  type="button"
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    setValue(`${r.owner}/${r.name}`);
-                    setShowDropdown(false);
-                    setActiveIndex(-1);
-                    handleSubmit(`${r.owner}/${r.name}`);
-                  }}
-                  className={`w-full px-4 py-3 text-left transition-all duration-150 ${
-                    i === activeIndex ? "bg-[var(--color-surface-elevated)]" : "hover:bg-[var(--color-surface-elevated)]"
-                  } ${i === recentFiltered.length - 1 ? "rounded-b-xl" : ""}`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--color-surface-elevated)]">
-                      <svg className="h-4 w-4 text-[var(--color-primary)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M12 2L2 7l10 5 10-5-10-5Z" strokeLinejoin="round" />
-                        <path d="M2 17l10 5 10-5M2 12l10 5 10-5" opacity="0.6" />
-                      </svg>
-                    </div>
-                    <div className="flex-1">
-                      <span className="text-sm font-medium text-[var(--color-text)]">{r.owner}/</span>
-                      <span className="text-sm text-[var(--color-text-secondary)]">{r.name}</span>
-                    </div>
-                    <span className="text-xs font-mono text-[var(--color-text-muted)]">{timeAgo(r.searchedAt)}</span>
+              {showSearch && (
+                <>
+                  <div className="sticky top-0 border-b border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
+                    Repositories
                   </div>
-                </button>
-              ))}
+                  {searchResults.map((r, i) => (
+                    <button
+                      key={`search-${r.fullName}`}
+                      id={`search-option-${i}`}
+                      role="option"
+                      aria-selected={i === activeIndex}
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        selectItem(i);
+                      }}
+                      className={`w-full px-4 py-3 text-left transition-all duration-150 ${
+                        i === activeIndex
+                          ? "bg-[var(--color-surface-elevated)]"
+                          : "hover:bg-[var(--color-surface-elevated)]"
+                        } ${!showRecent && i === searchResults.length - 1 ? "rounded-b-xl" : ""}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={r.avatarUrl}
+                          alt=""
+                          loading="lazy"
+                          className="h-8 w-8 flex-shrink-0 rounded-full"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-[var(--color-text)] truncate">{r.owner}/</span>
+                            <span className="text-sm text-[var(--color-text-secondary)] truncate">{r.name}</span>
+                          </div>
+                          {r.description && (
+                            <p className="mt-0.5 truncate text-xs text-[var(--color-text-muted)]">
+                              {r.description}
+                            </p>
+                          )}
+                          <div className="mt-1 flex items-center gap-3 text-xs text-[var(--color-text-muted)]">
+                            {r.language && (
+                              <span className="flex items-center gap-1">
+                                <span className="h-2 w-2 rounded-full bg-[var(--color-primary)]" />
+                                {r.language}
+                              </span>
+                            )}
+                            <span className="flex items-center gap-1">
+                              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
+                              </svg>
+                              {formatStars(r.stars)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </>
+              )}
+
+              {showSearch && showRecent && (
+                <div className="border-t border-[var(--color-border)]" />
+              )}
+
+              {showRecent && (
+                <>
+                  <div className={`sticky top-0 border-b border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)] ${showSearch ? "" : ""}`}>
+                    Recent searches
+                  </div>
+                  {recentFiltered.map((r, i) => {
+                    const displayIndex = searchResults.length + i;
+                    return (
+                      <button
+                        key={`recent-${r.owner}/${r.name}`}
+                        id={`search-option-${displayIndex}`}
+                        role="option"
+                        aria-selected={displayIndex === activeIndex}
+                        type="button"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          selectItem(displayIndex);
+                        }}
+                        className={`w-full px-4 py-3 text-left transition-all duration-150 ${
+                          displayIndex === activeIndex
+                            ? "bg-[var(--color-surface-elevated)]"
+                            : "hover:bg-[var(--color-surface-elevated)]"
+                          } ${displayIndex === totalItems - 1 ? "rounded-b-xl" : ""}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--color-surface-elevated)]">
+                            <svg className="h-4 w-4 text-[var(--color-primary)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M12 2L2 7l10 5 10-5-10-5Z" strokeLinejoin="round" />
+                              <path d="M2 17l10 5 10-5M2 12l10 5 10-5" opacity="0.6" />
+                            </svg>
+                          </div>
+                          <div className="flex-1">
+                            <span className="text-sm font-medium text-[var(--color-text)]">{r.owner}/</span>
+                            <span className="text-sm text-[var(--color-text-secondary)]">{r.name}</span>
+                          </div>
+                          <span className="text-xs font-mono text-[var(--color-text-muted)]">{timeAgo(r.searchedAt)}</span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </>
+              )}
+
+              {searchError && !searching && (
+                <div className="px-4 py-4 text-xs text-[var(--color-text-muted)]">
+                  <p>Search failed. {searchError}</p>
+                </div>
+              )}
+
+              {showEmpty && !searchError && (
+                <div className="px-4 py-6 text-center text-xs text-[var(--color-text-muted)]">
+                  No repositories found for &ldquo;{value}&rdquo;
+                </div>
+              )}
+
+              {searching && (
+                <div className="flex items-center justify-center gap-2 px-4 py-4 text-xs text-[var(--color-text-muted)]">
+                  <svg className="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Searching...
+                </div>
+              )}
             </div>
           )}
         </div>
