@@ -61,6 +61,16 @@ export async function generateAiReviewText(
   const simpleResult = await tryProvider(primary, simpleSystem);
   if (simpleResult) return { ...simpleResult, provider: primary };
 
+  // Try fallback model on primary provider
+  if (fallbackModel) {
+    console.warn(`[ai/dispatcher] Simple prompt failed, trying fallback model "${fallbackModel}" on "${primary}"`);
+    const fallbackResult = await tryProvider(primary, undefined, fallbackModel);
+    if (fallbackResult) return { ...fallbackResult, provider: primary };
+
+    const simpleFallbackResult = await tryProvider(primary, simpleSystem, fallbackModel);
+    if (simpleFallbackResult) return { ...simpleFallbackResult, provider: primary };
+  }
+
   // Try all other available providers automatically
   const available = getAvailableProviders().filter(p => p !== primary);
   for (const provider of available) {

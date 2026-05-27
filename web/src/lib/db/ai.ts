@@ -295,8 +295,27 @@ Respond with this JSON (all fields required):
     parsed = JSON.parse(jsonStr);
     validateSchema(parsed);
   } catch (err) {
-    console.error("[ai] JSON parse/validation failed:", err);
-    return;
+    console.warn("[ai] JSON parse/validation failed, retrying with fallback:", err);
+    // Retry once — fallback model may produce valid JSON
+    const retryResult = await generateAiReviewText(
+      prompt,
+      "Output ONLY valid JSON matching the schema. No markdown, no explanation, no extra text.",
+    );
+    if (!retryResult) {
+      console.error("[ai] Fallback attempt also failed");
+      return;
+    }
+    const retryCleaned = retryResult.text.replace(/```[\s\S]*?```/g, "").trim();
+    const retryJsonStr = extractJson(retryCleaned) ?? retryCleaned;
+    try {
+      parsed = JSON.parse(retryJsonStr);
+      validateSchema(parsed);
+      // Use retry model info
+      Object.assign(providerResult, retryResult);
+    } catch {
+      console.error("[ai] Fallback JSON also invalid, giving up");
+      return;
+    }
   }
 
   // ── 5. Cross-validate ───────────────────────────────────────────────────

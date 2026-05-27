@@ -104,8 +104,17 @@ export async function POST(req: Request) {
       }, { status: 500 });
     }
 
-    await computeAndStoreScore(dbRepo.id, rawRepo, parsed.owner, parsed.name);
-    await maybeGenerateAiReview(dbRepo.id, dbRepo.owner, dbRepo.name, { rawRepo, token: token ?? undefined });
+    // Score is fast (pure computation) — do synchronously so page loads with data
+    try {
+      await computeAndStoreScore(dbRepo.id, rawRepo, parsed.owner, parsed.name);
+    } catch (scoreErr) {
+      console.error("[lookup] Score computation failed (non-fatal):", scoreErr);
+    }
+
+    // AI analysis is slow — fire and forget so the user can navigate immediately
+    maybeGenerateAiReview(dbRepo.id, dbRepo.owner, dbRepo.name, { rawRepo, token: token ?? undefined }).catch(
+      (err) => console.error("[lookup] Background AI review failed:", err)
+    );
 
     return NextResponse.json({ repo: dbRepo, tokenSource }, { status: 200 });
   } catch (err) {
