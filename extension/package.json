@@ -1,5 +1,6 @@
 {
   "name": "@reporank/extension",
+  "displayName": "RepoRank",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,9 +10,9 @@
     "build:firefox": "plasmo build --target=firefox-mv2",
     "build:safari": "plasmo build --target=safari-mv3",
 
-    "test": "vitest run",
-    "test:unit": "vitest run",
-    "test:unit:watch": "vitest"
+    "test": "vitest run --passWithNoTests",
+    "test:unit": "vitest run --passWithNoTests",
+    "test:unit:watch": "vitest --passWithNoTests"
   },
   "dependencies": {
     "hosted-git-info": "^7.0",
@@ -21,12 +22,17 @@
   },
   "manifest": {
     "name": "RepoRank",
+    "permissions": [
+      "storage",
+      "alarms"
+    ],
     "host_permissions": [
       "https://github.com/*",
       "https://gitlab.com/*",
       "https://npmjs.com/*",
       "https://bitbucket.org/*",
-      "https://codeberg.org/*"
+      "https://codeberg.org/*",
+      "http://localhost/*"
     ],
     "commands": {
       "_execute_action": {

@@ -1,4 +1,5 @@
 import type { ScoreResult, WatchlistItem, DashboardData } from "./constants"
+import { getSettings } from "./storage"
 
 export const BASE_URL = process.env.PLASMO_PUBLIC_API_URL ?? "https://reporank.online"
 
@@ -13,8 +14,11 @@ async function request<T>(
   init?: RequestInit,
 ): Promise<{ data?: T; error?: ApiError }> {
   try {
-    const res = await fetch(`${BASE_URL}${path}`, {
+    const settings = await getSettings().catch(() => ({ apiUrl: BASE_URL }))
+    const activeBaseUrl = settings.apiUrl || BASE_URL
+    const res = await fetch(`${activeBaseUrl}${path}`, {
       ...init,
+      signal: AbortSignal.timeout(5000),
       headers: { "Content-Type": "application/json", ...init?.headers },
     })
     if (res.status === 429) {
@@ -26,7 +30,10 @@ async function request<T>(
     if (!res.ok) return { error: { type: "UNKNOWN", message: `Unexpected error (${res.status}).` } }
     const data = await res.json()
     return { data }
-  } catch {
+  } catch (err: any) {
+    if (err?.name === "TimeoutError" || err?.name === "AbortError") {
+      return { error: { type: "NETWORK", message: "Request timed out after 5s." } }
+    }
     return { error: { type: "NETWORK", message: "Unable to reach RepoRank servers. Check your connection." } }
   }
 }

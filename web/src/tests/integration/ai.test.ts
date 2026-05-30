@@ -6,6 +6,7 @@ const query = vi.hoisted(() => ({
   eq: vi.fn().mockReturnThis(),
   maybeSingle: vi.fn(),
   insert: vi.fn().mockResolvedValue({ error: null }),
+  upsert: vi.fn().mockResolvedValue({ error: null }),
   order: vi.fn().mockReturnThis(),
   limit: vi.fn().mockReturnThis(),
   single: vi.fn(),
@@ -145,8 +146,8 @@ describe('AI analysis', () => {
 
     await maybeGenerateAiReview('repo-1', 'owner', 'repo')
 
-    expect(query.insert).toHaveBeenCalledTimes(1)
-    const insertArg = query.insert.mock.calls[0][0]
+    expect(query.upsert).toHaveBeenCalledTimes(1)
+    const insertArg = query.upsert.mock.calls[0][0]
     expect(insertArg.summary).toBe(validAiResponse.summary)
     expect(insertArg.verdict).toBe('RECOMMENDED')
     expect(insertArg.injection_flagged).toBe(false)
@@ -169,6 +170,6 @@ describe('AI analysis', () => {
 
     await maybeGenerateAiReview('repo-1', 'owner', 'repo')
 
-    expect(query.insert).not.toHaveBeenCalled()
+    expect(query.upsert).not.toHaveBeenCalled()
   })
 })

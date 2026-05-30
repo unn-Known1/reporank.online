@@ -155,6 +155,29 @@ export default function SearchBox() {
       } else if (!res.ok) {
         setError("Something went wrong. Please try again.");
       } else {
+        const body = await res.json().catch(() => ({}));
+        if (body.status === "queued" && body.jobId) {
+          let done = false;
+          let attempts = 0;
+          while (!done && attempts < 30) {
+            await new Promise((r) => setTimeout(r, 1000));
+            attempts++;
+            try {
+              const jobRes = await fetch(`/api/job/${body.jobId}`);
+              if (!jobRes.ok) continue;
+              const jobData = await jobRes.json();
+              if (jobData.status === "completed") {
+                done = true;
+              } else if (jobData.status === "failed") {
+                setError("Failed to process repository.");
+                setLoading(false);
+                return;
+              }
+            } catch (err) {
+              // Ignore fetch errors during polling
+            }
+          }
+        }
         addToRecent(parsed.owner, parsed.name);
         router.push(`/github/${parsed.owner}/${parsed.name}`);
       }

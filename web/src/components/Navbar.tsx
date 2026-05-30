@@ -1,13 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import AuthButton from "@/components/AuthButton";
 import BlogNavTab from "@/components/blog/BlogNavTab";
 import CommunityNavTab from "@/components/blog/CommunityNavTab";
 import ExtensionNavTab from "@/components/extension/ExtensionNavTab";
 import AboutNavTab from "@/components/about/AboutNavTab";
-import { parseRepoInput } from "@/lib/utils";
 
 function ThemeToggle() {
   const [dark, setDark] = useState(false);
@@ -47,43 +45,9 @@ function ThemeToggle() {
 }
 
 export default function Navbar() {
-  const [searchValue, setSearchValue] = useState("");
-  const [searchLoading, setSearchLoading] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const router = useRouter();
-  const searchInputRef = useRef<HTMLInputElement>(null);
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
-
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-      }
-    }
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
-
-  const handleSearch = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    const parsed = parseRepoInput(searchValue);
-    if (!parsed) return;
-    setSearchLoading(true);
-    try {
-      await fetch("/api/repo/lookup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ input: `${parsed.owner}/${parsed.name}` }),
-      });
-    } catch {
-      // navigate anyway — page will handle missing score gracefully
-    } finally {
-      setSearchLoading(false);
-    }
-    router.push(`/github/${parsed.owner}/${parsed.name}`);
-  }, [searchValue, router]);
 
   return (
     <nav className="sticky top-0 z-sticky border-b border-[var(--color-border)] bg-[var(--color-surface)]/80 backdrop-blur-xl">
@@ -97,46 +61,17 @@ export default function Navbar() {
           </span>
         </a>
 
-        <form onSubmit={handleSearch} className="hidden flex-1 sm:block">
-          <div className="relative max-w-xs">
-            <svg className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-            </svg>
-            <input
-              ref={searchInputRef}
-              value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
-              placeholder="Search owner/repo..."
-              className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-canvas)] py-2 pl-10 pr-10 text-sm text-[var(--color-text)] placeholder-[var(--color-text-muted)] transition-all duration-200 focus:border-[var(--color-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]/20"
-              aria-label="Search repos"
-            />
-            {!searchValue && (
-              <kbd className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 hidden items-center gap-1 rounded border border-[var(--color-border)] px-1.5 py-0.5 text-[10px] font-medium text-[var(--color-text-muted)] md:flex">
-                <span>⌘</span>K
-              </kbd>
-            )}
-            {searchValue && (
-              <button
-                type="button"
-                aria-label="Clear search"
-                onClick={() => { setSearchValue(""); searchInputRef.current?.focus(); }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-[var(--color-text-muted)] transition-colors duration-200 hover:text-[var(--color-text-secondary)]"
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            )}
-          </div>
-        </form>
+        <div className="hidden flex-1 sm:block" />
 
         <div className="flex-1 sm:hidden" />
 
-        <div className="flex items-center gap-2">
+        <div className="hidden md:flex items-center gap-1 mr-2">
           <AboutNavTab />
           <BlogNavTab />
           <CommunityNavTab />
           <ExtensionNavTab />
+        </div>
+        <div className="flex items-center gap-2">
           <ThemeToggle />
           <div className="hidden sm:block">
             <AuthButton />
@@ -163,20 +98,7 @@ export default function Navbar() {
 
       <div className={`overflow-hidden transition-all duration-300 ease-smooth sm:hidden ${mobileOpen ? "max-h-64 opacity-100" : "max-h-0 opacity-0"}`}>
         <div className="border-t border-[var(--color-border)] bg-[var(--color-surface-elevated)] px-6 pb-5 pt-4">
-          <form onSubmit={handleSearch} className="mb-4">
-            <div className="relative">
-              <svg className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-              </svg>
-              <input
-                value={searchValue}
-                onChange={(e) => setSearchValue(e.target.value)}
-                placeholder="Search owner/repo..."
-                className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] py-2.5 pl-10 pr-4 text-sm text-[var(--color-text)] placeholder-[var(--color-text-muted)] transition-all duration-200 focus:border-[var(--color-primary)] focus:outline-none focus:ring-1 focus:ring-[var(--color-primary)]/20"
-                aria-label="Search repos"
-              />
-            </div>
-          </form>
+
           <a href="/about" className="block rounded-lg px-3 py-2 text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)] transition-colors mb-1">
             About
           </a>

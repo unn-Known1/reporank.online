@@ -4,6 +4,12 @@ vi.mock("@/lib/queue/redis", () => ({
   getRedis: () => { throw new Error("No Redis in test"); },
 }));
 
+vi.mock("@/lib/supabase/admin", () => ({
+  supabaseAdmin: () => ({
+    rpc: () => Promise.resolve({ data: null, error: new Error("No DB in test") }),
+  }),
+}));
+
 const { checkRateLimit } = await import("@/lib/ratelimit");
 
 describe("benchmark: rate limiter timing (in-memory fallback)", () => {

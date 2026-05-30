@@ -115,7 +115,22 @@ export default function GitHubPanel() {
     }
     setState({ score: null, loading: true, queued: false })
 
-    const result = await fetchScore(repo.platform, repo.owner, repo.name)
+    let result: { data?: any; error?: any }
+    try {
+      const response = await chrome.runtime.sendMessage({
+        type: "FETCH_SCORE",
+        payload: { platform: repo.platform, owner: repo.owner, name: repo.name }
+      })
+      result = response?.success ? { data: response.data } : { error: response?.error ?? { message: "Invalid response" } }
+    } catch (err) {
+      console.warn("[reporank CS] Background fetch failed, falling back to direct fetch:", err)
+      try {
+        result = await fetchScore(repo.platform, repo.owner, repo.name)
+      } catch (directErr: any) {
+        result = { error: { message: directErr?.message || "Connection failed" } }
+      }
+    }
+
     if (key !== prevKey.current) return
 
     if (result.error) {
@@ -123,7 +138,15 @@ export default function GitHubPanel() {
       return
     }
     if (!result.data) {
-      await queueLookup(window.location.href)
+      try {
+        await chrome.runtime.sendMessage({
+          type: "QUEUE_LOOKUP",
+          payload: { url: window.location.href }
+        })
+      } catch (err) {
+        console.warn("[reporank CS] Background queue failed, falling back to direct queue:", err)
+        await queueLookup(window.location.href)
+      }
       if (key === prevKey.current) setState({ score: null, loading: false, queued: true })
       return
     }

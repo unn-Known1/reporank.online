@@ -73,7 +73,12 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 
 chrome.runtime.onMessage.addListener(
   (req: MessageRequest, _sender: chrome.runtime.MessageSender, sendResponse: (res: MessageResponse) => void) => {
-    handleMessage(req).then(sendResponse)
+    handleMessage(req)
+      .then(sendResponse)
+      .catch(err => {
+        console.error("Error in background message handler:", err)
+        sendResponse({ success: false, error: { type: "UNKNOWN", message: err?.message || String(err) } })
+      })
     return true
   },
 )
