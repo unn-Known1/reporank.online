@@ -21,8 +21,9 @@ export default async function RelatedRepos({
           <Link
             key={repo.id}
             href={`/github/${repo.owner}/${repo.name}`}
-            className="flex items-center justify-between rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 transition-all duration-200 hover:border-[var(--color-primary)]/30 hover:bg-[var(--color-surface-elevated)]"
+            className="flex items-start gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 transition-all duration-200 hover:border-[var(--color-primary)]/30 hover:bg-[var(--color-surface-elevated)]"
           >
+            {/* Left: name + description — truncate safely */}
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium text-[var(--color-text)]">
                 <span className="text-[var(--color-text-muted)]">{repo.owner}/</span>
@@ -34,14 +35,15 @@ export default async function RelatedRepos({
                 </p>
               )}
             </div>
-            <div className="ml-4 flex shrink-0 items-center gap-3 text-xs text-[var(--color-text-muted)]">
+            {/* Right: language dot + star count — top-aligned, never overlaps */}
+            <div className="flex shrink-0 flex-col items-end gap-0.5 pt-0.5 text-xs text-[var(--color-text-muted)]">
               {repo.language && (
                 <span className="inline-flex items-center gap-1">
                   <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-primary)]" />
                   {repo.language}
                 </span>
               )}
-              <span>{repo.stars.toLocaleString()} stars</span>
+              <span className="whitespace-nowrap">{repo.stars.toLocaleString()} stars</span>
             </div>
           </Link>
         ))}
