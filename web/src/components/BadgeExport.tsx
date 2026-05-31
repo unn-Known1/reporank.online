@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 
 type Props = {
   owner: string;
@@ -41,10 +42,13 @@ export default function BadgeExport({ owner, name }: Props) {
           {badgeFailed ? (
             <span className="text-xs text-[var(--color-text-muted)]">Badge unavailable</span>
           ) : (
-            <img
+            <Image
               src={badgePath}
               alt="RepoRank badge"
+              width={88}
+              height={20}
               className="h-6 w-auto"
+              unoptimized
               onError={() => setBadgeFailed(true)}
             />
           )}

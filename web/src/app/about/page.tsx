@@ -92,7 +92,7 @@ export default function AboutPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      <h1 className="text-3xl font-bold text-[var(--color-text)]">About RepoRank</h1>
+      <h1 className="font-display text-3xl font-bold text-[var(--color-text)]">About RepoRank</h1>
 
       <section className="mt-8 space-y-6 text-sm leading-relaxed text-[var(--color-text-secondary)]">
         <p>
@@ -102,7 +102,7 @@ export default function AboutPage() {
           automated metrics, AI analysis, and community reviews.
         </p>
 
-        <h2 className="text-lg font-semibold text-[var(--color-text)]">Why RepoRank?</h2>
+        <h2 className="font-display text-lg font-semibold text-[var(--color-text)]">Why RepoRank?</h2>
         <p>
           Star counts can be misleading. A repo with thousands of stars might be abandoned,
           while a well-maintained project with few stars could be the perfect fit. RepoRank
@@ -110,7 +110,7 @@ export default function AboutPage() {
           maintenance activity, community engagement, code maturity, and ecosystem integration.
         </p>
 
-        <h2 className="text-lg font-semibold text-[var(--color-text)]">The Five Dimensions</h2>
+        <h2 className="font-display text-lg font-semibold text-[var(--color-text)]">The Five Dimensions</h2>
       </section>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -131,14 +131,14 @@ export default function AboutPage() {
       </div>
 
       <section className="mt-10 space-y-6 text-sm leading-relaxed text-[var(--color-text-secondary)]">
-        <h2 className="text-lg font-semibold text-[var(--color-text)]">Evidence-First</h2>
+        <h2 className="font-display text-lg font-semibold text-[var(--color-text)]">Evidence-First</h2>
         <p>
           Every score is backed by evidence. You can see exactly which metrics contributed,
           when they were last updated, and how each dimension was calculated. No black boxes
           — transparency is a core design principle.
         </p>
 
-        <h2 className="text-lg font-semibold text-[var(--color-text)]">How Scoring Works</h2>
+        <h2 className="font-display text-lg font-semibold text-[var(--color-text)]">How Scoring Works</h2>
         <p>
           The deterministic scoring engine analyzes public GitHub data across five dimensions
           and normalizes them into a 0-100 score. When a repository is first looked up, AI
@@ -146,7 +146,7 @@ export default function AboutPage() {
           members can then contribute reviews and vote on their helpfulness.
         </p>
 
-        <h2 className="text-lg font-semibold text-[var(--color-text)]">Open Source</h2>
+        <h2 className="font-display text-lg font-semibold text-[var(--color-text)]">Open Source</h2>
         <p>
           The entire platform is open source under the{" "}
           <a
@@ -169,7 +169,7 @@ export default function AboutPage() {
           . Contributions, suggestions, and bug reports are welcome.
         </p>
 
-        <h2 className="text-lg font-semibold text-[var(--color-text)]">Built by Developers, for Developers</h2>
+        <h2 className="font-display text-lg font-semibold text-[var(--color-text)]">Built by Developers, for Developers</h2>
         <p>
           RepoRank was created by developers who wanted a better way to assess repositories
           before adopting them. The platform is free to use, and badges are available for

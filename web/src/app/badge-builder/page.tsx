@@ -14,10 +14,10 @@ export const metadata: Metadata = {
 
 export default function BadgeBuilderPage() {
   return (
-    <div className="min-h-screen bg-[var(--color-bg)] px-4 py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[var(--color-canvas)] px-4 py-12 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-3xl">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-[var(--color-text)]">Badge Builder</h1>
+          <h1 className="font-display text-3xl font-bold text-[var(--color-text)]">Badge Builder</h1>
           <p className="mt-2 text-[var(--color-text-secondary)]">
             Create a custom RepoRank badge for your repository README
           </p>

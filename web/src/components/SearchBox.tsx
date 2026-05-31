@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { parseRepoInput } from "@/lib/utils";
 import { supabaseBrowser } from "@/lib/supabase/client";
 
@@ -466,10 +467,11 @@ export default function SearchBox() {
                         } ${!showRecent && i === searchResults.length - 1 ? "rounded-b-xl" : ""}`}
                     >
                       <div className="flex items-center gap-3">
-                        <img
+                        <Image
                           src={r.avatarUrl}
                           alt=""
-                          loading="lazy"
+                          width={32}
+                          height={32}
                           className="h-8 w-8 flex-shrink-0 rounded-full"
                         />
                         <div className="flex-1 min-w-0">

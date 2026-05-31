@@ -4,6 +4,7 @@ import { getProfileByUserId } from "@/lib/db/user-blog-profiles";
 import BlogPostCard from "@/components/blog/BlogPostCard";
 import BlogEmptyState from "@/components/blog/BlogEmptyState";
 import BreadcrumbJsonLd from "@/components/seo/BreadcrumbJsonLd";
+import Image from "next/image";
 import type { Metadata } from "next";
 import "@/styles/blog.css";
 
@@ -61,9 +62,11 @@ export default async function UserPostsPage({ params, searchParams }: Props) {
       <div className="mb-8">
         <div className="flex items-center gap-3">
           {profile?.avatar_url && (
-            <img
+            <Image
               src={profile.avatar_url}
               alt={displayName}
+              width={48}
+              height={48}
               className="h-12 w-12 rounded-full"
             />
           )}

@@ -60,7 +60,7 @@ export default async function BlogPage({
             <RSSFeedLink />
           </div>
         </div>
-        <p className="blog-meta" style={{ marginTop: "0.5rem", color: "var(--color-text-secondary)" }}>
+        <p className="mt-2 text-[var(--color-text-secondary)]">
           Insights and analysis about GitHub repositories
         </p>
       </div>
@@ -79,10 +79,9 @@ export default async function BlogPage({
             <div className="blog-pagination">
               <a
                 href={`/blog?page=${page - 1}${category ? `&category=${category}` : ""}`}
-                className="blog-pagination-button"
+                className={`blog-pagination-button ${page <= 1 ? "opacity-50 cursor-not-allowed" : ""}`}
                 aria-disabled={page <= 1}
                 onClick={(e) => page <= 1 && e.preventDefault()}
-                style={{ pointerEvents: page <= 1 ? "none" : "auto" }}
               >
                 Previous
               </a>
@@ -90,22 +89,16 @@ export default async function BlogPage({
                 <a
                   key={p}
                   href={`/blog?page=${p}${category ? `&category=${category}` : ""}`}
-                  className="blog-pagination-button"
-                  style={{
-                    fontWeight: p === page ? "700" : "500",
-                    borderColor: p === page ? "var(--color-primary)" : undefined,
-                    color: p === page ? "var(--color-primary)" : undefined,
-                  }}
+                  className={`blog-pagination-button ${p === page ? "!border-[var(--color-primary)] !text-[var(--color-primary)] !font-bold" : ""}`}
                 >
                   {p}
                 </a>
               ))}
               <a
                 href={`/blog?page=${page + 1}${category ? `&category=${category}` : ""}`}
-                className="blog-pagination-button"
+                className={`blog-pagination-button ${page >= pagination.total_pages ? "opacity-50 cursor-not-allowed" : ""}`}
                 aria-disabled={page >= pagination.total_pages}
                 onClick={(e) => page >= pagination.total_pages && e.preventDefault()}
-                style={{ pointerEvents: page >= pagination.total_pages ? "none" : "auto" }}
               >
                 Next
               </a>
