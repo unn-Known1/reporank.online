@@ -1,6 +1,7 @@
 import { supabaseServer } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 import { fetchRepoFactors } from "@/lib/github/graphql";
+import { getAppToken } from "@/lib/github/token";
 import { computeScore } from "@reporank/core";
 import type { ScoreFactors } from "@reporank/core";
 import { mapRepoDataToFactors, detectHasTests, computeReadmeQuality } from "@/lib/github/factors";
@@ -183,8 +184,27 @@ async function generateAndStoreAiReview(
   options?: { rawRepo?: unknown; token?: string }
 ): Promise<void> {
   // ── 1. Fetch repo data (reuse pre-fetched rawRepo if available) ──────────
-  const token = options?.token || requireEnv("GITHUB_APP_TOKEN");
-  const repo = options?.rawRepo ?? await fetchRepoFactors(owner, name, token);
+  const userToken = options?.token;
+  let token = userToken || requireEnv("GITHUB_APP_TOKEN");
+  let repo: any;
+  try {
+    repo = options?.rawRepo ?? await fetchRepoFactors(owner, name, token);
+  } catch (err: any) {
+    const errMsg = err?.message ?? "";
+    const isAuthError = errMsg.includes("UNAUTHORIZED") || errMsg.includes("FORBIDDEN") || errMsg.includes("Bad credentials");
+    if (isAuthError && !!userToken) {
+      const appToken = getAppToken();
+      if (appToken) {
+        console.log(`[ai] User token auth error for ${owner}/${name}, retrying fetch with app token`);
+        token = appToken;
+        repo = await fetchRepoFactors(owner, name, appToken);
+      } else {
+        throw err;
+      }
+    } else {
+      throw err;
+    }
+  }
   const factors = mapRepoDataToFactors(repo);
   const scoreResult = computeScore(factors as ScoreFactors);
 

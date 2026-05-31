@@ -35,7 +35,7 @@ export async function generateAiReviewText(
     if (!resolved) return null;
     const fn = PROVIDERS[resolved];
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 120000);
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
 
     // Propagate external signal to internal controller
     const onExternalAbort = () => { controller.abort(); };
