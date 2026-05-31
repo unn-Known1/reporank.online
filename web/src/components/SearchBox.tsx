@@ -183,7 +183,10 @@ export default function SearchBox() {
           setSignInRequired(false);
         }
       } else if (!res.ok) {
-        setError("Something went wrong. Please try again.");
+        console.error("[SearchBox] Lookup failed:", { status: res.status, statusText: res.statusText });
+        const body = await res.json().catch(() => null);
+        console.error("[SearchBox] Lookup error body:", body);
+        setError(body?.error || "Something went wrong. Please try again.");
       } else {
         const body = await res.json().catch(() => ({}));
         if (body.status === "queued" && body.jobId) {

@@ -3,7 +3,7 @@ import { getRepoByOwnerName, upsertRepoFromGitHub } from "@/lib/db/repos";
 import { computeAndStoreScore } from "@/lib/db/scores";
 import { maybeGenerateAiReview } from "@/lib/db/ai";
 import { checkRateLimit } from "@/lib/ratelimit";
-import { getGitHubToken } from "@/lib/github/token";
+import { getGitHubToken, getAppToken } from "@/lib/github/token";
 import { getScoringQueue } from "@/lib/queue";
 import { dedupe } from "@/lib/dedup";
 import { parseRepoInput } from "@/lib/utils";
@@ -88,6 +88,8 @@ export async function POST(req: Request) {
     const dedupKey = `lookup:${isUserToken ? "user" : "app"}:${parsed.owner}/${parsed.name}`;
     let dbRepo: any;
     let rawRepo: any;
+    let tokenSourceUsed = tokenSource;
+
     try {
       const result = await dedupe(dedupKey, () =>
         upsertRepoFromGitHub(parsed.owner, parsed.name, token ?? undefined)
@@ -95,6 +97,8 @@ export async function POST(req: Request) {
       dbRepo = result.dbRepo;
       rawRepo = result.rawRepo;
     } catch (err: any) {
+      const errMsg = err?.message ?? "";
+
       if (err?.status === 429) {
         return NextResponse.json({
           status: "rate_limited",
@@ -102,14 +106,56 @@ export async function POST(req: Request) {
           tokenSource,
         }, { status: 429 });
       }
-      throw err;
+
+      // If user token is unauthorized/forbidden, retry with app token
+      const isAuthError = errMsg.includes("UNAUTHORIZED") || errMsg.includes("FORBIDDEN") || errMsg.includes("Bad credentials");
+      if (isAuthError && isUserToken) {
+        console.log(`[lookup] User token failed for ${parsed.owner}/${parsed.name}, retrying with app token`);
+        const appToken = getAppToken();
+        if (!appToken) {
+          return NextResponse.json({
+            error: "GitHub authentication failed. Try signing out and signing back in.",
+            tokenSource,
+          }, { status: 403 });
+        }
+        tokenSourceUsed = "app";
+        const retryKey = `lookup:app:${parsed.owner}/${parsed.name}`;
+        const result = await dedupe(retryKey, () =>
+          upsertRepoFromGitHub(parsed.owner, parsed.name, appToken)
+        );
+        dbRepo = result.dbRepo;
+        rawRepo = result.rawRepo;
+      } else if (errMsg.includes("NOT_FOUND")) {
+        return NextResponse.json({
+          error: "Repository not found on GitHub.",
+          tokenSource,
+        }, { status: 404 });
+      } else {
+        throw err;
+      }
     }
 
     if (!dbRepo) {
-      return NextResponse.json({
-        error: "Failed to store repository data. Please try again.",
-        tokenSource,
-      }, { status: 500 });
+      // upsert succeeded at GitHub fetch but DB upsert failed
+      if (tokenSourceUsed === "user") {
+        const appToken = getAppToken();
+        if (appToken) {
+          console.log("[lookup] User token upsert failed, retrying DB write with app token");
+          tokenSourceUsed = "app";
+          const retryKey = `lookup:app:${parsed.owner}/${parsed.name}`;
+          const result = await dedupe(retryKey, () =>
+            upsertRepoFromGitHub(parsed.owner, parsed.name, appToken)
+          );
+          dbRepo = result.dbRepo;
+          rawRepo = result.rawRepo;
+        }
+      }
+      if (!dbRepo) {
+        return NextResponse.json({
+          error: "Failed to store repository data. Please try again.",
+          tokenSource,
+        }, { status: 500 });
+      }
     }
 
     // Score is fast (pure computation) — do synchronously so page loads with data
@@ -124,7 +170,7 @@ export async function POST(req: Request) {
       (err) => console.error("[lookup] Background AI review failed:", err)
     );
 
-    return NextResponse.json({ repo: dbRepo, tokenSource }, { status: 200 });
+    return NextResponse.json({ repo: dbRepo, tokenSource: tokenSourceUsed }, { status: 200 });
   } catch (err) {
     console.error("[lookup]", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

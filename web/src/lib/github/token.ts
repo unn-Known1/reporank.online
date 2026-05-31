@@ -5,6 +5,14 @@ import { requireEnv } from '@/lib/env'
 // SECURITY: provider_token is a short-lived OAuth token scoped to this session.
 // Never write it to the database. Never log it. Use only for same-request API calls.
 
+export function getAppToken(): string | null {
+  try {
+    return requireEnv('GITHUB_APP_TOKEN');
+  } catch {
+    return null;
+  }
+}
+
 export async function getGitHubToken(): Promise<{ token: string | null; isUserToken: boolean }> {
   try {
     const supabase = await supabaseServer()
