@@ -136,19 +136,17 @@ export async function POST(req: Request) {
     }
 
     if (!dbRepo) {
-      // upsert succeeded at GitHub fetch but DB upsert failed
-      if (tokenSourceUsed === "user") {
-        const appToken = getAppToken();
-        if (appToken) {
-          console.log("[lookup] User token upsert failed, retrying DB write with app token");
-          tokenSourceUsed = "app";
-          const retryKey = `lookup:app:${parsed.owner}/${parsed.name}`;
-          const result = await dedupe(retryKey, () =>
-            upsertRepoFromGitHub(parsed.owner, parsed.name, appToken)
-          );
-          dbRepo = result.dbRepo;
-          rawRepo = result.rawRepo;
-        }
+      console.error(`[lookup] DB upsert returned no row for ${parsed.owner}/${parsed.name}`);
+      // Retry once — handles transient DB failures regardless of token type
+      const retryToken = tokenSourceUsed === "app" ? getAppToken() : token;
+      if (retryToken) {
+        console.log("[lookup] Retrying DB upsert once");
+        const retryKey = `lookup:retry:${parsed.owner}/${parsed.name}`;
+        const result = await dedupe(retryKey, () =>
+          upsertRepoFromGitHub(parsed.owner, parsed.name, retryToken)
+        ).catch(() => ({ dbRepo: null, rawRepo: null }));
+        dbRepo = result.dbRepo;
+        rawRepo = result.rawRepo;
       }
       if (!dbRepo) {
         return NextResponse.json({
