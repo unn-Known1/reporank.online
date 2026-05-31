@@ -63,7 +63,9 @@ export async function DELETE(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Authentication required" }, { status: 401 });
 
-  const { owner, name } = await req.json();
+  const url = new URL(req.url);
+  const owner = url.searchParams.get("owner");
+  const name = url.searchParams.get("name");
   if (!owner || !name) {
     return NextResponse.json({ error: "owner and name are required" }, { status: 400 });
   }

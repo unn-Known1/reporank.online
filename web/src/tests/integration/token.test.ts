@@ -1,10 +1,11 @@
 import { describe, it, expect, vi } from 'vitest'
 
+const mockGetUser = vi.hoisted(() => vi.fn())
 const mockGetSession = vi.hoisted(() => vi.fn())
 
 vi.mock('@/lib/supabase/server', () => ({
   supabaseServer: () => ({
-    auth: { getSession: mockGetSession },
+    auth: { getUser: mockGetUser, getSession: mockGetSession },
   }),
 }))
 
@@ -17,6 +18,10 @@ vi.mock('@/lib/env', () => ({
 
 describe('getGitHubToken', () => {
   it('uses provider_token when user is authenticated', async () => {
+    mockGetUser.mockResolvedValue({
+      data: { user: { id: 'user-1' } },
+      error: null,
+    } as any)
     mockGetSession.mockResolvedValue({
       data: { session: { provider_token: 'user-github-token-xyz' } },
     } as any)
@@ -28,6 +33,10 @@ describe('getGitHubToken', () => {
   })
 
   it('falls back to app token when unauthenticated', async () => {
+    mockGetUser.mockResolvedValue({
+      data: { user: null },
+      error: { message: 'no session' },
+    } as any)
     mockGetSession.mockResolvedValue({
       data: { session: null },
     } as any)
@@ -39,6 +48,10 @@ describe('getGitHubToken', () => {
   })
 
   it('falls back to app token when provider_token is missing from session', async () => {
+    mockGetUser.mockResolvedValue({
+      data: { user: { id: 'user-1' } },
+      error: null,
+    } as any)
     mockGetSession.mockResolvedValue({
       data: { session: { user: { id: 'user-1' } } },
     } as any)

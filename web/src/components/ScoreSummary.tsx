@@ -123,7 +123,7 @@ const SubScoreItem = React.memo(function SubScoreItem({
 
   return (
     <div
-      className="group relative overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-elevated)] p-4 transition-all duration-300 hover:border-[var(--color-border-strong)]"
+      className="group relative overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-elevated)] p-4 transition-all duration-300 hover:border-[var(--color-border-strong)] hover:shadow-sm"
       style={{
         opacity: revealed ? 1 : 0,
         transform: revealed ? "translateY(0)" : "translateY(8px)",
@@ -132,15 +132,15 @@ const SubScoreItem = React.memo(function SubScoreItem({
       title={isUnscored ? "No data available for this metric" : `${keyName}: ${value}/100 — ${info.label}`}
     >
       <div className="flex items-center justify-between">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
           {keyName}
         </span>
-        <span className={`font-display text-xl font-bold whitespace-nowrap ${info.accent}`}>
+        <span className={`font-display text-lg font-bold whitespace-nowrap ${info.accent}`}>
           {isUnscored ? <span className="opacity-40">&mdash;</span> : value}
         </span>
       </div>
 
-      <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-[var(--color-border)]">
+      <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-[var(--color-border)]">
         <div
           className={`h-full rounded-full bg-gradient-to-r ${info.gradient} transition-all duration-1000 ease-out`}
           style={{
@@ -151,8 +151,7 @@ const SubScoreItem = React.memo(function SubScoreItem({
       </div>
 
       <div className="mt-2 flex items-center justify-between">
-        <span className="text-[9px] text-[var(--color-text-muted)]">Weight</span>
-        <span className="text-[10px] font-mono font-semibold text-[var(--color-text-secondary)]">
+        <span className="text-[10px] font-mono text-[var(--color-text-muted)]">
           {WEIGHT_LABELS[keyName] ?? 0}%
         </span>
       </div>
@@ -224,43 +223,43 @@ export default function ScoreSummary({
     };
   }, [displayTotal]);
 
-  const circumference = 2 * Math.PI * 56;
+  const circumference = 2 * Math.PI * 72;
   const strokeDashoffset = revealed
     ? circumference - (circumference * animatedScore) / 100
     : circumference;
 
   return (
     <div className="relative">
-      <div className="relative overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm transition-colors duration-500">
-        <div className={`h-1 bg-gradient-to-r ${scoreInfo.gradient}`} />
+      <div className="relative overflow-hidden rounded-2xl border-2 border-[var(--color-border-strong)] bg-[var(--color-surface)] shadow-elevated transition-colors duration-500">
+        <div className={`h-1.5 bg-gradient-to-r ${scoreInfo.gradient}`} />
 
         <div className="p-6 sm:p-8">
-          <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:gap-8">
-            <div className="flex flex-col items-center gap-4 sm:flex-row">
+          <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:gap-10">
+            <div className="flex flex-col items-center gap-6 sm:flex-row">
               <div className="relative">
                 <div
                   className="absolute inset-0 rounded-full blur-2xl transition-opacity duration-1000"
                   style={{
-                    opacity: revealed ? 0.25 : 0,
+                    opacity: revealed ? 0.3 : 0,
                     background: `linear-gradient(135deg, ${scoreInfo.gradientFrom}, ${scoreInfo.gradientTo})`,
                   }}
                 />
 
-                <div className="relative h-32 w-32">
-                  <svg className="absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 128 128">
-                    <circle cx="64" cy="64" r="56" fill="none" stroke="currentColor" strokeWidth="6" className="text-[var(--color-border)]" />
+                <div className="relative h-40 w-40">
+                  <svg className="absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 160 160">
+                    <circle cx="80" cy="80" r="72" fill="none" stroke="var(--color-border)" strokeWidth="8" />
                     <circle
-                      cx="64"
-                      cy="64"
-                      r="56"
+                      cx="80"
+                      cy="80"
+                      r="72"
                       fill="none"
                       stroke={`url(#scoreGrad-${gradientId})`}
-                      strokeWidth="6"
+                      strokeWidth="8"
                       strokeLinecap="round"
                       style={{
                         strokeDasharray: circumference,
                         strokeDashoffset,
-                        transition: "stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1)",
+                        transition: "stroke-dashoffset 1.2s cubic-bezier(0.16, 1, 0.3, 1)",
                       }}
                     />
                     <defs>
@@ -272,21 +271,21 @@ export default function ScoreSummary({
                   </svg>
 
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className={`font-display text-3xl font-bold tracking-tight ${scoreInfo.accent}`}>
+                    <span className={`font-display text-4xl font-bold tracking-tight ${scoreInfo.accent}`}>
                       {animatedScore}
                     </span>
-                    <span className="text-[10px] font-medium uppercase tracking-widest text-[var(--color-text-muted)]">
+                    <span className="text-xs font-medium uppercase tracking-widest text-[var(--color-text-muted)]">
                       Score
                     </span>
                   </div>
                 </div>
 
-                <div className={`absolute -right-1 -top-1 flex h-7 w-7 items-center justify-center rounded-lg ${scoreInfo.bgAccent} border ${scoreInfo.borderAccent}`}>
-                  <span className={`font-display text-xs font-black ${gradeInfo.color}`}>{gradeInfo.letter}</span>
+                <div className={`absolute -right-0.5 -top-0.5 flex h-9 w-9 items-center justify-center rounded-xl ${scoreInfo.bgAccent} border-2 ${scoreInfo.borderAccent}`}>
+                  <span className={`font-display text-sm font-black ${gradeInfo.color}`}>{gradeInfo.letter}</span>
                 </div>
               </div>
 
-              <div className="flex flex-col items-center gap-2 sm:items-start">
+              <div className="flex flex-col items-center gap-3 sm:items-start">
                 <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
                   <span className={`inline-flex items-center rounded-lg px-3 py-1 text-sm font-semibold ${scoreInfo.bgAccent} ${scoreInfo.accent} border ${scoreInfo.borderAccent}`}>
                     {scoreInfo.label}
@@ -299,7 +298,7 @@ export default function ScoreSummary({
                 </div>
 
                 {repo && (
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                  <div className="flex flex-wrap items-center gap-x-5 gap-y-1">
                     <div className="flex items-center gap-1.5">
                       <svg className="h-4 w-4 text-amber-500" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
@@ -308,7 +307,7 @@ export default function ScoreSummary({
                       <span className="text-xs text-[var(--color-text-muted)]">stars</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <svg className="h-4 w-4 text-cyan-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                      <svg className="h-4 w-4 text-[var(--color-text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
                       </svg>
                       <span className="text-sm font-semibold text-[var(--color-text)]">{repo.forks.toLocaleString()}</span>
@@ -316,7 +315,7 @@ export default function ScoreSummary({
                     </div>
                     {repo.language && (
                       <div className="flex items-center gap-1.5">
-                        <span className="h-2 w-2 rounded-full bg-cyan-500" />
+                        <span className="h-2 w-2 rounded-full bg-[var(--color-primary)]" />
                         <span className="text-sm text-[var(--color-text-secondary)]">{repo.language}</span>
                       </div>
                     )}
@@ -329,7 +328,7 @@ export default function ScoreSummary({
                       const days = daysAgo(computedAt);
                       if (days > 30) {
                         return (
-                          <span className="inline-flex items-center gap-1 rounded-lg bg-warning-50 px-2 py-0.5 text-xs font-semibold text-warning-600 dark:bg-warning-500/10 dark:text-warning-500">
+                          <span className="inline-flex items-center gap-1 rounded-lg bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-600 dark:text-amber-500">
                             <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
                             </svg>
@@ -347,7 +346,7 @@ export default function ScoreSummary({
                     })()}
                     {tokenSource === "user" && (
                       <span
-                        className="inline-flex items-center gap-1 rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400"
+                        className="inline-flex items-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-600 dark:text-emerald-400"
                         title="This score was computed using your GitHub API quota"
                       >
                         <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">

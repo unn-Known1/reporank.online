@@ -22,6 +22,7 @@ export function createScoringWorker(): Worker<RepoScoringJob> | null {
         const { dbRepo, rawRepo } = await upsertRepoFromGitHub(owner, name, userToken)
 
         if (!dbRepo) {
+          console.error(`[worker] GraphQL fetch succeeded but DB upsert failed for ${owner}/${name}. rawRepo=${!!rawRepo}`)
           throw new Error(`Failed to upsert repo ${owner}/${name}`)
         }
 

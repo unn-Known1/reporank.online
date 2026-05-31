@@ -72,49 +72,61 @@ async function SiteStatsDisplay() {
   );
 }
 
-const features = [
+type FeatureVariant = "score" | "ai" | "reviews" | "badge";
+
+const features: { icon: React.ReactNode; title: string; description: string; variant: FeatureVariant }[] = [
   {
     icon: (
-      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
-      </svg>
+      <div className="relative flex h-9 w-9 items-center justify-center">
+        <svg className="absolute inset-0 h-9 w-9 -rotate-90" viewBox="0 0 28 28" aria-hidden="true">
+          <circle cx="14" cy="14" r="11.5" fill="none" stroke="var(--color-border)" strokeWidth="2.5" />
+          <circle cx="14" cy="14" r="11.5" fill="none" stroke="var(--color-primary)" strokeWidth="2.5" strokeDasharray="72.3" strokeDashoffset="21.7" strokeLinecap="round" />
+        </svg>
+        <span className="font-mono text-[10px] font-bold text-[var(--color-primary)]">72</span>
+      </div>
     ),
     title: "Health Score",
     description: "Automated credibility score based on 17 factors across 5 dimensions — maintenance, community, security, documentation, and adoption.",
+    variant: "score",
   },
   {
     icon: (
-      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
-      </svg>
+      <div className="flex h-6 w-6 items-center justify-center rounded-md bg-[var(--color-accent)]/10 px-1.5">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--color-accent)]">AI</span>
+      </div>
     ),
     title: "AI Analysis",
     description: "Instant AI-powered analysis for every repo when no human reviews exist. Cross-validated against deterministic metrics.",
+    variant: "ai",
   },
   {
     icon: (
-      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+      <svg className="h-6 w-6 text-amber-500" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
       </svg>
     ),
     title: "Human Reviews",
     description: "Real developers share their experience with structured ratings across code quality, documentation, maintenance, and security.",
+    variant: "reviews",
   },
   {
     icon: (
-      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      <svg className="h-6 w-6 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+        <rect x="4" y="8" width="16" height="10" rx="2" strokeLinejoin="round" />
+        <path d="M7 13h2M10 13h2" strokeLinecap="round" />
+        <path d="M6 5h12a2 2 0 012 2v1H4V7a2 2 0 012-2z" strokeLinejoin="round" />
       </svg>
     ),
     title: "Badge",
     description: "Embed a dynamic credibility badge in your README. Shows your score and links back to your RepoRank page.",
+    variant: "badge",
   },
 ];
 
 export default function HomePage() {
   return (
     <>
-      <section className="relative flex min-h-[calc(100vh-4rem)] items-center justify-center px-6">
+      <section className="relative flex min-h-[80vh] items-center justify-center px-6">
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute -top-20 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full opacity-[0.06] dark:opacity-[0.1] blur-3xl" style={{ background: "radial-gradient(circle, #06b6d4 0%, transparent 70%)" }} />
           <div className="absolute bottom-0 left-0 h-96 w-96 -translate-x-1/3 rounded-full opacity-[0.04] dark:opacity-[0.06] blur-3xl" style={{ background: "radial-gradient(circle, #ec4899 0%, transparent 70%)" }} />
@@ -130,9 +142,9 @@ export default function HomePage() {
 
           <h1 className="font-display text-4xl font-extrabold tracking-tight sm:text-5xl text-[var(--color-text)]">
             Can you trust{" "}
-            <span className="bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-accent)] bg-clip-text text-transparent">
-              this repo?
-            </span>
+<span className="text-[var(--color-primary)]">
+            this repo?
+          </span>
           </h1>
 
           <p className="mt-4 text-base sm:text-lg text-[var(--color-text-secondary)] max-w-2xl mx-auto">
@@ -142,6 +154,33 @@ export default function HomePage() {
 
           <div className="mt-10">
             <SearchBox />
+          </div>
+
+          <p className="mt-3 text-xs text-[var(--color-text-muted)]">
+            Try <kbd className="rounded-md border border-[var(--color-border)] bg-[var(--color-surface-elevated)] px-1.5 py-0.5 font-mono text-[var(--color-text-secondary)]">facebook/react</kbd>{" "}
+            or <kbd className="rounded-md border border-[var(--color-border)] bg-[var(--color-surface-elevated)] px-1.5 py-0.5 font-mono text-[var(--color-text-secondary)]">vercel/next.js</kbd>
+          </p>
+
+          <div className="mx-auto mt-8 max-w-md rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-left transition-all duration-300 hover:shadow-elevated">
+            <div className="flex items-center gap-3">
+              <div className="relative flex h-14 w-14 flex-shrink-0 items-center justify-center">
+                <svg className="absolute inset-0 h-14 w-14 -rotate-90" viewBox="0 0 36 36" aria-hidden="true">
+                  <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--color-border)" strokeWidth="3" />
+                  <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--color-primary)" strokeWidth="3" strokeDasharray="97.4" strokeDashoffset="29.2" strokeLinecap="round" />
+                </svg>
+                <span className="font-display text-lg font-extrabold text-[var(--color-primary)]">B+</span>
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="truncate text-sm font-medium text-[var(--color-text)]">facebook/</span>
+                  <span className="truncate text-sm text-[var(--color-text-secondary)]">react</span>
+                </div>
+                <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">Score: <span className="font-mono font-medium text-emerald-500">72</span> — Good</p>
+              </div>
+              <svg className="h-4 w-4 flex-shrink-0 text-[var(--color-text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+              </svg>
+            </div>
           </div>
 
           <Suspense fallback={<StatsSkeleton />}>
@@ -161,18 +200,59 @@ export default function HomePage() {
         </div>
 
         <div className="mt-12 grid gap-5 sm:grid-cols-2">
-          {features.map((feature, index) => (
-            <div
-              key={index}
-              className="group relative overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-elevated"
-            >
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-elevated)] mb-4 text-[var(--color-primary)]">
-                {feature.icon}
+          {features.map((feature, index) => {
+            const accentBorders: Record<FeatureVariant, string> = {
+              score: "before:bg-[var(--color-primary)]",
+              ai: "before:bg-[var(--color-accent)]",
+              reviews: "before:bg-amber-500",
+              badge: "before:bg-emerald-500",
+            };
+            return (
+              <div
+                key={index}
+                className={`group relative overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-elevated before:absolute before:inset-x-0 before:top-0 before:h-0.5 ${accentBorders[feature.variant]}`}
+              >
+                <div className={`mb-4 flex h-11 w-11 items-center justify-center rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-elevated)] ${
+                  feature.variant === "score" ? "text-[var(--color-primary)]" :
+                  feature.variant === "ai" ? "text-[var(--color-accent)]" :
+                  feature.variant === "reviews" ? "text-amber-500" :
+                  "text-emerald-500"
+                }`}>
+                  {feature.icon}
+                </div>
+                {feature.variant === "reviews" && (
+                  <div className="mb-2 flex items-center gap-0.5" aria-label="5 star rating">
+                    {[1,2,3,4,5].map((s) => (
+                      <svg key={s} className="h-3 w-3 text-amber-400" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                      </svg>
+                    ))}
+                  </div>
+                )}
+                {feature.variant === "badge" && (
+                  <div className="mb-2 flex items-center gap-1">
+                    <span className="inline-flex items-center gap-0.5 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-emerald-500">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                      B+
+                    </span>
+                  </div>
+                )}
+                {feature.variant === "score" && (
+                  <div className="mb-2 flex items-center gap-2">
+                    <div className="flex -space-x-1">
+                      <span className="inline-block h-2 w-5 rounded-sm bg-emerald-400" />
+                      <span className="inline-block h-2 w-5 rounded-sm bg-emerald-400" />
+                      <span className="inline-block h-2 w-5 rounded-sm bg-amber-400" />
+                      <span className="inline-block h-2 w-5 rounded-sm bg-[var(--color-border)]" />
+                      <span className="inline-block h-2 w-5 rounded-sm bg-[var(--color-border)]" />
+                    </div>
+                  </div>
+                )}
+                <h3 className="font-display text-base font-semibold text-[var(--color-text)]">{feature.title}</h3>
+                <p className="mt-1.5 text-sm leading-relaxed text-[var(--color-text-secondary)]">{feature.description}</p>
               </div>
-              <h3 className="font-display text-base font-semibold text-[var(--color-text)]">{feature.title}</h3>
-              <p className="mt-1.5 text-sm leading-relaxed text-[var(--color-text-secondary)]">{feature.description}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
     </>

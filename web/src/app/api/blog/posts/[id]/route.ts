@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getBlogPostById, updateBlogPost, deleteBlogPost, checkPostOwnership } from "@/lib/blog/service";
 import { getUser } from "@/lib/supabase/server";
-
-const ADMIN_EMAILS = (process.env.ADMIN_EMAILS ?? "").split(",").map(s => s.trim().toLowerCase()).filter(Boolean);
-
-function isAdminEmail(user: { email?: string | null }): boolean {
-  return ADMIN_EMAILS.length > 0 && !!user.email && ADMIN_EMAILS.includes(user.email.toLowerCase());
-}
+import { isAdminEmail } from "@/lib/blog/admin";
 
 export async function GET(
   request: NextRequest,
@@ -40,6 +35,11 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const contentType = request.headers.get("content-type") || "";
+  if (!contentType.includes("application/json")) {
+    return NextResponse.json({ error: "Content-Type must be application/json" }, { status: 415 });
+  }
+
   const user = await getUser();
   if (!user) {
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });

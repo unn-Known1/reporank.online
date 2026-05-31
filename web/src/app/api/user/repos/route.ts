@@ -93,7 +93,6 @@ export async function GET(req: Request) {
       has_more: repos.length === 500,
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Internal server error";
     console.error("[user/repos]", err);
 
     if ((err as any)?.status === 401) {
@@ -106,7 +105,7 @@ export async function GET(req: Request) {
       });
     }
 
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 

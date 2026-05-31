@@ -9,7 +9,7 @@ import { supabaseAdmin } from '@/lib/supabase/admin'
 const WINDOW_MS = 60_000;          // 1 minute
 const MAX_REQUESTS = 10;           // 10 requests per minute per IP per bucket
 const REDIS_PREFIX = 'ratelimit:';
-const FALLBACK_WINDOW_MS = 30_000; // shorter window for per-instance fallback
+const FALLBACK_WINDOW_MS = 60_000; // use same window as WINDOW_MS for consistency
 const CLEANUP_INTERVAL_MS = 60_000;
 
 let redisClient: Redis | null = null;

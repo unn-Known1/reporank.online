@@ -104,7 +104,12 @@ export async function fetchViewerRepos(token: string): Promise<GitHubUserRepoNod
       baseDelayMs: 2000,
     });
 
-    const json: ViewerReposResponse = await res.json();
+    let json: ViewerReposResponse;
+    try {
+      json = await res.json();
+    } catch {
+      throw new Error("Invalid JSON response from GitHub GraphQL API");
+    }
 
     if (json.errors?.length) {
       const fatalTypes = new Set(["NOT_FOUND", "FORBIDDEN", "UNAUTHORIZED", "MAX_NODE_LIMIT_EXCEEDED"]);

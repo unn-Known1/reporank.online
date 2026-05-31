@@ -19,7 +19,8 @@ function getClientIp(req: Request): string {
   );
 }
 
-export async function POST(req: Request, { params }: { params: { owner: string; name: string } }) {
+export async function POST(req: Request, { params }: { params: Promise<{ owner: string; name: string }> }) {
+  const { owner, name } = await params;
   const user = await getUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -37,16 +38,23 @@ export async function POST(req: Request, { params }: { params: { owner: string; 
     );
   }
 
-  const repo = await getRepoByOwnerName(params.owner, params.name);
+  const repo = await getRepoByOwnerName(owner, name);
   if (!repo) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const repoKey = `${params.owner}/${params.name}`;
+  const repoKey = `${owner}/${name}`;
 
   // Cleanup stale entries
   for (const [key, timestamp] of pendingAiRefreshes) {
     if (Date.now() - timestamp > REFRESH_TIMEOUT_MS) {
       pendingAiRefreshes.delete(key);
     }
+  }
+
+  // Enforce size cap
+  if (pendingAiRefreshes.size > 1000) {
+    const entries = [...pendingAiRefreshes.entries()];
+    const toDelete = entries.slice(0, entries.length - 1000);
+    for (const [key] of toDelete) pendingAiRefreshes.delete(key);
   }
 
   // Dedup: return early if a refresh is already in progress for this repo
@@ -63,8 +71,8 @@ export async function POST(req: Request, { params }: { params: { owner: string; 
     // Pass user token to AI review pipeline for BYOT quota isolation
     // generateAndStoreAiReview handles upsert internally (update existing or insert new)
     const { token, isUserToken } = await getGitHubToken();
-    console.log(`[refresh-ai] ${params.owner}/${params.name}: tokenSource=${isUserToken ? "user" : "app"}`);
-    await maybeGenerateAiReview(repo.id, params.owner, params.name, { token: token ?? undefined });
+    console.log(`[refresh-ai] ${owner}/${name}: tokenSource=${isUserToken ? "user" : "app"}`);
+    await maybeGenerateAiReview(repo.id, owner, name, { token: token ?? undefined });
 
     return NextResponse.json({ success: true });
   } finally {

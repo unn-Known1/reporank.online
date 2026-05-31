@@ -47,7 +47,7 @@ export default function AuthButton() {
 
   const handleSignOut = async () => {
     const supabase = supabaseBrowser();
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: "global" });
     setDropdownOpen(false);
   };
 

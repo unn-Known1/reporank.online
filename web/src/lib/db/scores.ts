@@ -33,7 +33,11 @@ export async function computeAndStoreScore(repoId: string, rawRepo: any, owner?:
 
   if (error) throw error;
 
-  Promise.resolve(supabaseAdmin().rpc('refresh_site_stats_mv')).catch(() => {});
+  try {
+    await supabaseAdmin().rpc('refresh_site_stats_mv');
+  } catch (err) {
+    console.error("[scores] Failed to refresh site stats:", err);
+  }
 
   return data;
 }

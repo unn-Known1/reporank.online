@@ -2,7 +2,12 @@ import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 
 export async function supabaseServer() {
-  const cookieStore = await cookies();
+  let cookieStore;
+  try {
+    cookieStore = await cookies();
+  } catch {
+    return null;
+  }
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -18,7 +23,9 @@ export async function supabaseServer() {
         async setAll(cookiesToSet) {
           await Promise.all(
             cookiesToSet.map(async ({ name, value, options }) => {
-              try { await cookieStore.set(name, value, options); } catch { }
+              try { await cookieStore.set(name, value, options); } catch (err) {
+                console.error("[supabase] Failed to set cookie:", err);
+              }
             })
           );
         },

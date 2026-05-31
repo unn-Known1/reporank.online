@@ -52,7 +52,13 @@ export async function generateWithAnthropic(
           return null;
         }
 
-        const json = await res.json();
+        let json: any;
+        try {
+          json = await res.json();
+        } catch {
+          console.warn("[ai/anthropic] Invalid JSON response");
+          return null;
+        }
         const text = json.content?.[0]?.text ?? "";
         if (!text) {
           console.warn("[ai/anthropic] Empty response");

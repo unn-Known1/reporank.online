@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { listBlogPosts, getBlogPostBySlug, createBlogPost } from "@/lib/blog/service";
 import { getUser } from "@/lib/supabase/server";
+import { isAdminEmail } from "@/lib/blog/admin";
 import { checkRateLimit } from "@/lib/ratelimit";
 
 export const dynamic = 'force-dynamic';
@@ -12,7 +13,7 @@ export async function GET(request: NextRequest) {
 
   if (includeDrafts) {
     const user = await getUser();
-    if (!user) {
+    if (!user || !isAdminEmail(user)) {
       return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     }
   }
@@ -28,8 +29,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(post);
   }
 
-  const page = parseInt(searchParams.get("page") || "1", 10);
-  const limit = parseInt(searchParams.get("limit") || "20", 10);
+  const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
+  const limit = Math.max(1, Math.min(100, parseInt(searchParams.get("limit") || "20", 10) || 20));
   const category = searchParams.get("category") || undefined;
   const type = searchParams.get("type") as "admin" | "user" | undefined;
   const author = searchParams.get("author") || undefined;
@@ -41,6 +42,11 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const contentType = request.headers.get("content-type") || "";
+  if (!contentType.includes("application/json")) {
+    return NextResponse.json({ error: "Content-Type must be application/json" }, { status: 415 });
+  }
+
   const user = await getUser();
   if (!user) {
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });

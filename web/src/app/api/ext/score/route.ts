@@ -35,11 +35,13 @@ export async function GET(req: Request) {
   const score = await getLatestScore(repo.id)
   const reviewSummary = await getReviewSummary(repo.id)
 
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || new URL(req.url).origin;
+
   return NextResponse.json({
     total: score?.total_score ?? null,
     subscores: score?.subscores_json ?? null,
     verdict: null,
     reviewCount: reviewSummary.count,
-    repoUrl: `https://reporank.online/${platform}/${owner}/${name}`,
+    repoUrl: `${baseUrl}/${platform}/${owner}/${name}`,
   }, { headers: corsHeaders })
 }

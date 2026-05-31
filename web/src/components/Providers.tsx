@@ -2,6 +2,7 @@
 
 import { Suspense } from "react";
 import { ComparisonProvider } from "@/lib/comparison-context";
+import { AuthProvider } from "@/lib/auth-context";
 import CompareBar from "@/components/CompareBar";
 
 function CompareBarWrapper() {
@@ -11,10 +12,12 @@ function CompareBarWrapper() {
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ComparisonProvider>
-      {children}
-      <Suspense fallback={null}>
-        <CompareBarWrapper />
-      </Suspense>
+      <AuthProvider>
+        {children}
+        <Suspense fallback={null}>
+          <CompareBarWrapper />
+        </Suspense>
+      </AuthProvider>
     </ComparisonProvider>
   );
 }

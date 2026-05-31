@@ -24,7 +24,7 @@ export default function WatchlistButton({ owner, name, repoId, initialIsWatched 
   const handleClick = async () => {
     if (!user) {
       const supabase = supabaseBrowser();
-      const redirectTo = `${window.location.origin}/auth/callback?redirect_to=${encodeURIComponent(window.location.pathname)}`;
+      const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(window.location.pathname)}`;
       await supabase.auth.signInWithOAuth({
         provider: "github",
         options: { redirectTo, scopes: "read:user" },

@@ -77,6 +77,14 @@ export async function POST(req: Request) {
     }
 
     // Fallback: synchronous processing
+    const existing = await getRepoByOwnerName(parsed.owner, parsed.name);
+    if (existing?.last_fetched_at) {
+      const ageHours = (Date.now() - new Date(existing.last_fetched_at).getTime()) / 3600000;
+      if (ageHours < 24) {
+        return NextResponse.json({ status: "cached", repoId: existing.id, tokenSource }, { status: 200 });
+      }
+    }
+
     const dedupKey = `lookup:${isUserToken ? "user" : "app"}:${parsed.owner}/${parsed.name}`;
     let dbRepo: any;
     let rawRepo: any;
@@ -118,8 +126,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ repo: dbRepo, tokenSource }, { status: 200 });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Internal server error";
     console.error("[lookup]", err);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

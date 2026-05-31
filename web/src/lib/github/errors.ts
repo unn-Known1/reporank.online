@@ -7,7 +7,7 @@ export class GitHubApiError extends Error {
     super(message);
     this.name = 'GitHubApiError';
     this.status = status;
-    this.retryable = options?.retryable ?? (status !== 401 && status !== 403 && status !== 404);
+    this.retryable = options?.retryable ?? (status !== 401 && status !== 404);
     this.retryAfterSec = options?.retryAfterSec;
   }
 }

@@ -8,14 +8,17 @@ import { requireEnv } from '@/lib/env'
 export async function getGitHubToken(): Promise<{ token: string | null; isUserToken: boolean }> {
   try {
     const supabase = await supabaseServer()
-    if (!supabase) throw new Error('Supabase not configured')
-    const { data: { session } } = await supabase.auth.getSession()
+    if (!supabase) return { token: null, isUserToken: false }
 
-    if (session?.provider_token) {
-      return { token: session.provider_token, isUserToken: true }
+    const { data: { user }, error } = await supabase.auth.getUser()
+    if (!error && user) {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.provider_token) {
+        return { token: session.provider_token, isUserToken: true }
+      }
     }
-  } catch {
-    // Session fetch failed — fall through to app token
+  } catch (err) {
+    console.error("[token] Failed to get GitHub token:", err)
   }
 
   try {

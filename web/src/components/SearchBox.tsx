@@ -33,7 +33,10 @@ function timeAgo(dateStr: string): string {
 }
 
 function formatStars(n: number): string {
-  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
+  if (n >= 1000) {
+    const k = n / 1000;
+    return k % 1 === 0 ? `${k}k` : `${k.toFixed(1)}k`;
+  }
   return String(n);
 }
 
@@ -72,21 +75,41 @@ export default function SearchBox() {
   const blurTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
   const searchAbortRef = useRef<AbortController | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const lookupAbortRef = useRef<AbortController | null>(null);
+  const searchGenRef = useRef(0);
+  const userDismissedRef = useRef(false);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
 
   const handleGitHubSignIn = useCallback(async () => {
     setSigningIn(true);
-    document.cookie = `auth_origin=${window.location.origin}; path=/; max-age=300; SameSite=Lax`;
-    const supabase = supabaseBrowser();
-    const redirectTo = `${window.location.origin}/auth/callback`;
-    await supabase.auth.signInWithOAuth({
-      provider: "github",
-      options: { redirectTo, scopes: "read:user public_repo" },
-    });
-    setSigningIn(false);
+    try {
+      document.cookie = `auth_origin=${window.location.origin}; path=/; max-age=300; SameSite=Lax`;
+      const supabase = supabaseBrowser();
+      const redirectTo = `${window.location.origin}/auth/callback`;
+      await supabase.auth.signInWithOAuth({
+        provider: "github",
+        options: { redirectTo, scopes: "read:user public_repo" },
+      });
+    } catch (err) {
+      console.error("[SearchBox] GitHub sign-in failed:", err);
+    } finally {
+      setSigningIn(false);
+    }
   }, []);
 
   useEffect(() => {
     setRecent(loadRecent());
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
+    };
   }, []);
 
   useEffect(() => {
@@ -128,11 +151,17 @@ export default function SearchBox() {
     }
     setLoading(true);
     try {
+      if (lookupAbortRef.current) lookupAbortRef.current.abort();
+      const lookupController = new AbortController();
+      lookupAbortRef.current = lookupController;
+
       const res = await fetch("/api/repo/lookup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ input: searchValue }),
+        signal: lookupController.signal,
       });
+      if (!mountedRef.current) return;
       if (res.status === 404) {
         setError("Repository not found. Check the owner/repo name.");
       } else if (res.status === 403) {
@@ -177,7 +206,13 @@ export default function SearchBox() {
               // Ignore fetch errors during polling
             }
           }
+          if (!done) {
+            setError("Repository processing is taking longer than expected. Please visit the page directly.");
+            setLoading(false);
+            return;
+          }
         }
+        if (!mountedRef.current) return;
         addToRecent(parsed.owner, parsed.name);
         router.push(`/github/${parsed.owner}/${parsed.name}`);
       }
@@ -239,6 +274,7 @@ export default function SearchBox() {
   }
 
   useEffect(() => {
+    if (userDismissedRef.current) return;
     if (searching || searchResults.length > 0 || recentFiltered.length > 0) {
       setShowDropdown(true);
     }
@@ -278,8 +314,14 @@ export default function SearchBox() {
         selectItem(0);
         return;
       }
+      if (recentFiltered.length > 0) {
+        e.preventDefault();
+        selectItem(searchResults.length);
+        return;
+      }
     }
     if (e.key === "Escape") {
+      userDismissedRef.current = true;
       setShowDropdown(false);
       setActiveIndex(-1);
       inputRef.current?.blur();
@@ -299,6 +341,7 @@ export default function SearchBox() {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (searchAbortRef.current) searchAbortRef.current.abort();
 
+    const gen = ++searchGenRef.current;
     setSearching(true);
     setSearchError("");
 
@@ -323,7 +366,7 @@ export default function SearchBox() {
           setSearchError(err?.message || "Search failed");
         }
       } finally {
-        setSearching(false);
+        if (gen === searchGenRef.current) setSearching(false);
       }
     }, 300);
 
@@ -360,7 +403,7 @@ export default function SearchBox() {
               ref={inputRef}
               autoComplete="off"
               value={value}
-              onChange={(e) => setValue(e.target.value)}
+              onChange={(e) => { userDismissedRef.current = false; setValue(e.target.value); }}
               onFocus={handleFocus}
               onBlur={handleBlur}
               onKeyDown={handleKeyDown}
@@ -397,7 +440,6 @@ export default function SearchBox() {
               id="search-listbox"
               role="listbox"
               aria-label="Search results"
-              onMouseMove={() => { if (activeIndex !== -1) setActiveIndex(-1); }}
               className="absolute left-0 right-0 top-full z-dropdown mt-2 max-h-96 overflow-y-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-elevated backdrop-blur-xl"
             >
               {showSearch && (
@@ -412,6 +454,7 @@ export default function SearchBox() {
                       role="option"
                       aria-selected={i === activeIndex}
                       type="button"
+                      onMouseEnter={() => setActiveIndex(i)}
                       onMouseDown={(e) => {
                         e.preventDefault();
                         selectItem(i);
@@ -466,7 +509,7 @@ export default function SearchBox() {
 
               {showRecent && (
                 <>
-                  <div className={`sticky top-0 border-b border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)] ${showSearch ? "" : ""}`}>
+                  <div className="sticky top-0 border-b border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)]">
                     Recent searches
                   </div>
                   {recentFiltered.map((r, i) => {
@@ -478,6 +521,7 @@ export default function SearchBox() {
                         role="option"
                         aria-selected={displayIndex === activeIndex}
                         type="button"
+                        onMouseEnter={() => setActiveIndex(displayIndex)}
                         onMouseDown={(e) => {
                           e.preventDefault();
                           selectItem(displayIndex);

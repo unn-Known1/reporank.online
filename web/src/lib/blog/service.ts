@@ -18,6 +18,7 @@ import { renderMarkdown } from "@/lib/blog/markdown";
 import { generateSlug, isValidSlug } from "@/lib/blog/slug";
 import { autoGenerateSeoMeta, computeWordCount, computeReadingTime, formatReadingTime } from "@/lib/blog/seo";
 import { checkAllSpamRules, checkWordCountWarning } from "@/lib/blog/spam";
+import { isAdminEmail } from "@/lib/blog/admin";
 import { validateTags } from "@/lib/blog/tags";
 import { getUser } from "@/lib/supabase/server";
 import { getProfileByUserId } from "@/lib/db/user-blog-profiles";
@@ -96,21 +97,18 @@ export async function createBlogPost(input: CreatePostInput, authorId: string) {
     return { success: false as const, errors: [{ field: "slug", message: "Invalid generated slug" } as ValidationError] };
   }
 
-  let finalSlug = slug;
-  const existingSlug = await getPostBySlug(finalSlug);
-  if (existingSlug) {
-    const base = slug.replace(/-\d+$/, "");
-    let attempt = 2;
-    while (await getPostBySlug(finalSlug)) {
-      finalSlug = `${base}-${attempt}`;
-      attempt++;
-    }
-  }
-
   const excerpt = input.excerpt || truncateExcerpt(input.body);
   const wordCount = computeWordCount(input.body);
 
-  const postType: BlogPostType = input.type ?? "user";
+  let postType: BlogPostType = input.type ?? "user";
+
+  // Only admins can create admin-type posts
+  if (postType === "admin") {
+    const user = await getUser();
+    if (!user || !isAdminEmail(user)) {
+      postType = "user";
+    }
+  }
 
   let seoMetaTitle = input.seo_meta_title;
   let seoMetaDescription = input.seo_meta_description;
@@ -123,29 +121,39 @@ export async function createBlogPost(input: CreatePostInput, authorId: string) {
     if (!seoMetaDescription) seoMetaDescription = auto.description;
   }
 
+  let finalSlug = slug;
+  let attempts = 0;
   let post;
-  try {
-    post = await createPost({
-      title: input.title,
-      slug: finalSlug,
-    body: input.body,
-    excerpt,
-    author_id: authorId,
-    seo_meta_title: seoMetaTitle,
-    seo_meta_description: seoMetaDescription,
-    category_id: input.category_id,
-    status: input.status,
-    ai_generated: input.ai_generated ?? false,
-    type: postType,
-    tags: input.tags ?? [],
-    word_count: wordCount,
-    repos: input.repos,
-    });
-  } catch (err: unknown) {
-    if (err instanceof Error && err.message === "SLUG_CONFLICT") {
-      return { success: false as const, errors: [{ field: "slug", message: "Slug already exists after retry — try a different title" } as ValidationError] };
+  while (attempts < 5) {
+    try {
+      post = await createPost({
+        title: input.title,
+        slug: finalSlug,
+        body: input.body,
+        excerpt,
+        author_id: authorId,
+        seo_meta_title: seoMetaTitle,
+        seo_meta_description: seoMetaDescription,
+        category_id: input.category_id,
+        status: input.status,
+        ai_generated: input.ai_generated ?? false,
+        type: postType,
+        tags: input.tags ?? [],
+        word_count: wordCount,
+        repos: input.repos,
+      });
+      break;
+    } catch (err: unknown) {
+      if (err instanceof Error && err.message === "SLUG_CONFLICT") {
+        finalSlug = `${slug}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+        attempts++;
+        if (attempts >= 5) {
+          return { success: false as const, errors: [{ field: "slug", message: "Slug already exists after retry — try a different title" } as ValidationError] };
+        }
+        continue;
+      }
+      return { success: false as const, errors: [{ field: "_", message: "Failed to create post" } as ValidationError] };
     }
-    return { success: false as const, errors: [{ field: "_", message: "Failed to create post" } as ValidationError] };
   }
 
   if (!post) {
@@ -156,19 +164,22 @@ export async function createBlogPost(input: CreatePostInput, authorId: string) {
 }
 
 export async function updateBlogPost(id: string, input: UpdatePostInput) {
-  const errors = validateBlogPost({
-    title: input.title || "",
-    body: input.body || "",
-    excerpt: input.excerpt,
-    slug: input.slug,
-    seo_meta_title: input.seo_meta_title,
-    seo_meta_description: input.seo_meta_description,
-    status: input.status,
-    repos: input.repos,
-  });
+  // Only validate fields that are provided
+  if (input.title !== undefined || input.body !== undefined) {
+    const errors = validateBlogPost({
+      title: input.title ?? "",
+      body: input.body ?? "",
+      excerpt: input.excerpt,
+      slug: input.slug,
+      seo_meta_title: input.seo_meta_title,
+      seo_meta_description: input.seo_meta_description,
+      status: input.status,
+      repos: input.repos,
+    });
 
-  if (errors.length > 0) {
-    return { success: false as const, errors };
+    if (errors.length > 0) {
+      return { success: false as const, errors };
+    }
   }
 
   if (input.tags && input.tags.length > 0) {
@@ -184,25 +195,35 @@ export async function updateBlogPost(id: string, input: UpdatePostInput) {
     wordCount = computeWordCount(input.body);
   }
 
-  const post = await updatePost(id, {
-    title: input.title,
-    slug: input.slug,
-    body: input.body,
-    excerpt: input.excerpt,
-    seo_meta_title: input.seo_meta_title,
-    seo_meta_description: input.seo_meta_description,
-    category_id: input.category_id,
-    status: input.status,
-    tags: input.tags,
-    word_count: wordCount,
-    repos: input.repos,
-  });
+  try {
+    const post = await updatePost(id, {
+      title: input.title,
+      slug: input.slug,
+      body: input.body,
+      excerpt: input.excerpt,
+      seo_meta_title: input.seo_meta_title,
+      seo_meta_description: input.seo_meta_description,
+      category_id: input.category_id,
+      status: input.status,
+      tags: input.tags,
+      word_count: wordCount,
+      repos: input.repos,
+    });
 
-  if (!post) {
+    if (!post) {
+      return { success: false as const, errors: [{ field: "_", message: "Failed to update post" } as ValidationError] };
+    }
+
+    return { success: true as const, post: { id: post.id, slug: post.slug, title: post.title, status: post.status } };
+  } catch (err: any) {
+    if (err?.message === "SLUG_CONFLICT") {
+      return await updateBlogPost(id, {
+        ...input,
+        slug: `${input.slug ?? ""}-${Date.now()}`,
+      });
+    }
     return { success: false as const, errors: [{ field: "_", message: "Failed to update post" } as ValidationError] };
   }
-
-  return { success: true as const, post: { id: post.id, slug: post.slug, title: post.title, status: post.status } };
 }
 
 export async function deleteBlogPost(id: string): Promise<boolean> {

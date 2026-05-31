@@ -19,7 +19,7 @@ type ReviewRow = {
   is_author: boolean;
 };
 
-function toReviewRow(r: Review | ReviewRow): ReviewRow {
+function toReviewRow(r: Review | ReviewRow, owner: string): ReviewRow {
   if ("is_author" in r) return r as ReviewRow;
   const rev = r as Review;
   return {
@@ -32,7 +32,7 @@ function toReviewRow(r: Review | ReviewRow): ReviewRow {
     created_at: rev.created_at,
     is_outdated: rev.is_outdated,
     spam_flagged: rev.spam_flagged,
-    is_author: false,
+    is_author: rev.github_username === owner,
   };
 }
 
@@ -46,12 +46,17 @@ type Props = {
 
 export default function ReviewSection({ repoId, owner, name, initialReviews = [], initialTotal = 0 }: Props) {
   const [userId, setUserId] = useState<string | null>(null);
-  const [reviews, setReviews] = useState<ReviewRow[]>(initialReviews.map(toReviewRow));
+  const [reviews, setReviews] = useState<ReviewRow[]>([]);
   const [page, setPage] = useState(1);
-  const [totalReviews, setTotalReviews] = useState(initialTotal);
+  const [totalReviews, setTotalReviews] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setReviews(initialReviews.map((r) => toReviewRow(r, owner)));
+    setTotalReviews(initialTotal);
+  }, [initialReviews, initialTotal, owner]);
 
   useEffect(() => {
     setMounted(true);
@@ -70,7 +75,7 @@ export default function ReviewSection({ repoId, owner, name, initialReviews = []
       const res = await fetch(`/api/repo/${owner}/${name}?reviews_page=${nextPage}&reviews_limit=5`);
       if (!res.ok) throw new Error("Failed to fetch reviews");
       const data = await res.json();
-      setReviews((prev) => [...prev, ...(data.reviews ?? [])]);
+      setReviews((prev) => [...prev, ...(data.reviews ?? []).map((r: any) => toReviewRow(r, owner))]);
       setTotalReviews(data.total_reviews ?? 0);
     } catch {
       setError("Failed to load more reviews");

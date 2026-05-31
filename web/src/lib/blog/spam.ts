@@ -12,25 +12,31 @@ export interface SpamCheckResult {
 }
 
 export async function checkNewAccountCooldown(userId: string): Promise<SpamCheckResult> {
-  const supabase = supabaseAdmin();
-  const { data: user } = await supabase.auth.admin.getUserById(userId);
-  if (!user?.user?.created_at) {
-    return { allowed: false, reason: "Could not verify account age" };
+  try {
+    const supabase = supabaseAdmin();
+    const { data: user, error } = await supabase.auth.admin.getUserById(userId);
+    if (error || !user?.user?.created_at) {
+      console.error("[spam] Failed to check account age:", error);
+      return { allowed: true };
+    }
+
+    const createdAt = new Date(user.user.created_at).getTime();
+    const now = Date.now();
+    const hoursSinceCreation = (now - createdAt) / (1000 * 60 * 60);
+
+    if (hoursSinceCreation < NEW_ACCOUNT_HOURS) {
+      const hoursLeft = Math.ceil(NEW_ACCOUNT_HOURS - hoursSinceCreation);
+      return {
+        allowed: false,
+        reason: `Account too new. Please wait ${hoursLeft} more hour${hoursLeft === 1 ? "" : "s"} before posting.`,
+      };
+    }
+
+    return { allowed: true };
+  } catch (err) {
+    console.error("[spam] Failed to check account age:", err);
+    return { allowed: true };
   }
-
-  const createdAt = new Date(user.user.created_at).getTime();
-  const now = Date.now();
-  const hoursSinceCreation = (now - createdAt) / (1000 * 60 * 60);
-
-  if (hoursSinceCreation < NEW_ACCOUNT_HOURS) {
-    const hoursLeft = Math.ceil(NEW_ACCOUNT_HOURS - hoursSinceCreation);
-    return {
-      allowed: false,
-      reason: `Account too new. Please wait ${hoursLeft} more hour${hoursLeft === 1 ? "" : "s"} before posting.`,
-    };
-  }
-
-  return { allowed: true };
 }
 
 export async function checkDailyPostLimit(userId: string): Promise<SpamCheckResult> {

@@ -63,10 +63,14 @@ export async function computeTrendingSnapshot(): Promise<{
   const repoIds = [...new Set(recentRuns.map((r) => r.repo_id))];
 
   // Batch fetch all repos in a single query
-  const { data: reposData } = await supabase
+  const { data: reposData, error: reposError } = await supabase
     .from("repos")
     .select("id, owner, name, full_name, language, stars")
     .in("id", repoIds);
+
+  if (reposError) {
+    console.error("[trending] Failed to fetch repos:", reposError);
+  }
 
   const repoMap = new Map<string, { owner: string; name: string; full_name: string; language: string | null; stars: number }>();
   if (reposData) {

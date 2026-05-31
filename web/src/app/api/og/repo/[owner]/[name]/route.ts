@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { getRepoByOwnerName } from "@/lib/db/repos";
 import { getLatestScore } from "@/lib/db/scores";
 
+function escapeXml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+}
+
 export async function GET(
   _: Request,
   { params }: { params: Promise<{ owner: string; name: string }> },
@@ -25,7 +29,7 @@ export async function GET(
   <rect width="1200" height="630" fill="url(#bg)" rx="16"/>
   <rect x="48" y="48" width="1104" height="534" fill="none" stroke="#334155" stroke-width="1" rx="12"/>
   <text x="80" y="130" fill="#06b6d4" font-family="system-ui,sans-serif" font-size="28" font-weight="700" letter-spacing="2">REPORANK</text>
-  <text x="80" y="200" fill="#f1f5f9" font-family="system-ui,sans-serif" font-size="48" font-weight="800">${owner}/<tspan fill="#94a3b8">${name}</tspan></text>
+  <text x="80" y="200" fill="#f1f5f9" font-family="system-ui,sans-serif" font-size="48" font-weight="800">${escapeXml(owner)}/<tspan fill="#94a3b8">${escapeXml(name)}</tspan></text>
   ${total !== null ? `
   <text x="80" y="310" fill="#f1f5f9" font-family="system-ui,sans-serif" font-size="96" font-weight="800">${total}</text>
   <text x="190" y="310" fill="#64748b" font-family="system-ui,sans-serif" font-size="48" font-weight="500">/100</text>

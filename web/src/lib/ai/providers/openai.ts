@@ -52,7 +52,13 @@ export async function generateWithOpenAI(
           return null;
         }
 
-        const json = await res.json();
+        let json: any;
+        try {
+          json = await res.json();
+        } catch {
+          console.warn("[ai/openai] Invalid JSON response");
+          return null;
+        }
         const text = json.choices?.[0]?.message?.content ?? "";
         if (!text) {
           console.warn("[ai/openai] Empty response");

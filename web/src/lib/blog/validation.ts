@@ -18,13 +18,13 @@ export interface BlogPostInput {
 export function validateBlogPost(input: BlogPostInput): ValidationError[] {
   const errors: ValidationError[] = [];
 
-  if (!input.title || input.title.trim().length === 0) {
-    errors.push({ field: "title", message: "Title is required" });
+  if (typeof input.title !== "string" || input.title.trim().length < 3) {
+    errors.push({ field: "title", message: "Title must be at least 3 characters" });
   } else if (input.title.length > 200) {
     errors.push({ field: "title", message: "Title too long (max 200 characters)" });
   }
 
-  if (!input.body || input.body.trim().length === 0) {
+  if (typeof input.body !== "string" || input.body.trim().length === 0) {
     errors.push({ field: "body", message: "Body is required" });
   } else if (input.body.length > 100000) {
     errors.push({ field: "body", message: "Body too long (max 100000 characters)" });

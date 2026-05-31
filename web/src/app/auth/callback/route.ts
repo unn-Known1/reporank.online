@@ -23,8 +23,10 @@ export async function GET(req: Request) {
     if (!error) {
       const cookieStore = await cookies();
       const authOrigin = cookieStore.get("auth_origin")?.value;
-      const origin = authOrigin ?? new URL(req.url).origin;
-      const res = NextResponse.redirect(`${origin}${next}`);
+      const requestOrigin = new URL(req.url).origin;
+      const origin = (authOrigin && authOrigin === requestOrigin) ? authOrigin : requestOrigin;
+      const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/";
+      const res = NextResponse.redirect(`${origin}${safeNext}`);
       res.cookies.delete("auth_origin");
       return res;
     }

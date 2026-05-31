@@ -18,7 +18,7 @@ type Suggestion = {
 function getSuggestions(score: number, subscores: SubScores, stars: number, description: string | null, topics: string[], language: string | null): Suggestion[] {
   const items: Suggestion[] = [];
 
-  if (subscores.documentation < 40) {
+  if (subscores.security < 40) {
     items.push({
       label: "Add a license file",
       impact: "+10–15 pts",

@@ -129,54 +129,6 @@ type AiReview = {
   injection_flagged: boolean;
 };
 
-function ErrorCard({ title, message, variant = "warning" }: { title: string; message: string; variant?: "warning" | "danger" | "error" }) {
-  const colorMap = {
-    warning: {
-      border: "border-warning-500/20",
-      bg: "bg-warning-500/5",
-      iconBg: "bg-warning-500/10",
-      iconColor: "text-warning-600 dark:text-warning-500",
-      titleColor: "text-warning-800 dark:text-warning-500",
-      textColor: "text-warning-700 dark:text-warning-500/80",
-    },
-    danger: {
-      border: "border-danger-500/20",
-      bg: "bg-danger-500/5",
-      iconBg: "bg-danger-500/10",
-      iconColor: "text-danger-600 dark:text-danger-500",
-      titleColor: "text-danger-800 dark:text-danger-500",
-      textColor: "text-danger-700 dark:text-danger-500/80",
-    },
-    error: {
-      border: "border-danger-500/20",
-      bg: "bg-danger-500/5",
-      iconBg: "bg-danger-500/10",
-      iconColor: "text-danger-600 dark:text-danger-500",
-      titleColor: "text-danger-800 dark:text-danger-500",
-      textColor: "text-danger-700 dark:text-danger-500/80",
-    },
-  };
-  const c = colorMap[variant];
-
-  return (
-    <main className="mx-auto max-w-3xl px-4 py-12">
-      <div className={`rounded-xl border ${c.border} ${c.bg} p-6`}>
-        <div className="flex items-start gap-3">
-          <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${c.iconBg}`}>
-            <svg className={`h-5 w-5 ${c.iconColor}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-            </svg>
-          </div>
-          <div>
-            <h2 className={`text-base font-semibold ${c.titleColor}`}>{title}</h2>
-            <p className={`mt-1 text-sm ${c.textColor}`}>{message}</p>
-          </div>
-        </div>
-      </div>
-    </main>
-  );
-}
-
 export default async function RepoPage({ params }: PageProps) {
   const { owner, name } = params;
 
@@ -234,10 +186,13 @@ export default async function RepoPage({ params }: PageProps) {
               href={`https://github.com/${repo.owner}/${repo.name}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:opacity-80 transition-opacity"
+              className="inline-flex items-center gap-1.5 hover:opacity-80 transition-opacity"
             >
               <span className="text-[var(--color-text-muted)]">{repo.owner}/</span>
               <span>{repo.name}</span>
+              <svg className="h-4 w-4 text-[var(--color-text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+              </svg>
             </a>
           </h1>
           <div className="flex items-center gap-3">
@@ -356,14 +311,17 @@ export default async function RepoPage({ params }: PageProps) {
 
       {/* ── Badge — moved above AI for higher visibility ── */}
       <div className="mb-6">
-        <h2 className="mb-3 font-display text-base font-semibold text-[var(--color-text)]">Badge</h2>
+        <div className="mb-3 flex items-baseline justify-between">
+          <h2 className="font-display text-lg font-semibold text-[var(--color-text)]">Badge</h2>
+          <span className="text-xs text-[var(--color-text-muted)]">Embed in your README</span>
+        </div>
         <LazyBadgeExport owner={repo.owner} name={repo.name} />
       </div>
 
       {/* ── AI Analysis ── */}
       <div className="mb-6 mt-6">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-display text-base font-semibold text-[var(--color-text)]">AI Analysis</h2>
+          <h2 className="font-display text-lg font-semibold text-[var(--color-text)]">AI Analysis</h2>
           <AiReviewRefreshButton owner={owner} name={name} />
         </div>
         {ai ? (
@@ -397,7 +355,7 @@ export default async function RepoPage({ params }: PageProps) {
       </Suspense>
 
       <div id="review-section" className="mt-8">
-        <h2 className="mb-3 font-display text-base font-semibold text-[var(--color-text)]">
+        <h2 className="mb-3 font-display text-lg font-semibold text-[var(--color-text)]">
           Human Reviews
           {review_summary.count > 0 && (
             <span className="ml-2 rounded-full bg-[var(--color-surface-elevated)] px-2 py-0.5 text-sm font-normal font-mono text-[var(--color-text-muted)] border border-[var(--color-border)]">

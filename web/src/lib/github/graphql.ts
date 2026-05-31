@@ -57,7 +57,13 @@ export async function fetchRepoFactors(owner: string, name: string, token: strin
     );
   }
 
-  const json = JSON.parse(text);
+  let json: any;
+  try {
+    json = JSON.parse(text);
+  } catch (parseErr) {
+    console.error(`[github] Failed to parse GraphQL response for ${owner}/${name}:`, parseErr);
+    throw new Error(`Invalid response from GitHub GraphQL API for ${owner}/${name}`);
+  }
 
   if (json.errors?.length) {
     const fatalTypes = new Set(["NOT_FOUND", "FORBIDDEN", "UNAUTHORIZED", "MAX_NODE_LIMIT_EXCEEDED"]);

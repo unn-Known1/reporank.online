@@ -33,7 +33,12 @@ export async function searchRepos(query: string, token: string, limit = 8): Prom
       throw new GitHubApiError(`GitHub search failed: ${res.status}`, res.status, { retryable: false });
     }
 
-    const json = await res.json();
+    let json: any;
+    try {
+      json = await res.json();
+    } catch {
+      throw new Error(`Invalid JSON response from GitHub search API`);
+    }
     if (!json.items || !Array.isArray(json.items)) return [];
 
     return json.items.map((item: any) => ({

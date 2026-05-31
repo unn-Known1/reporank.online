@@ -51,6 +51,11 @@ export async function PUT(request: NextRequest) {
     errors.push("website_url must be a valid URL");
   }
 
+  const avatarUrl = typeof body.avatar_url === "string" ? body.avatar_url.trim() : undefined;
+  if (avatarUrl && !isValidUrl(avatarUrl)) {
+    errors.push("avatar_url must be a valid URL");
+  }
+
   if (errors.length > 0) {
     return NextResponse.json({ error: "Validation failed", errors }, { status: 400 });
   }
@@ -60,7 +65,7 @@ export async function PUT(request: NextRequest) {
     bio,
     github_url: githubUrl,
     website_url: websiteUrl,
-    avatar_url: typeof body.avatar_url === "string" ? body.avatar_url.trim() : undefined,
+    avatar_url: avatarUrl,
   });
 
   if (!profile) {

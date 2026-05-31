@@ -3,11 +3,11 @@ import { supabaseServer } from "@/lib/supabase/server";
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 export type ReviewRatings = {
-  codeQuality: number;
-  docs: number;
   maintenance: number;
-  easeOfUse: number;
+  code_quality: number;
   security: number;
+  docs: number;
+  ease_of_use: number;
 };
 
 export type Review = {
@@ -19,6 +19,8 @@ export type Review = {
   created_at: string;
   is_outdated: boolean;
   spam_flagged: boolean;
+  // github_username column exists in migration 00001_schema.sql (reviews table)
+  // but is not present in database.types.ts — mapped manually in mapReview()
   github_username: string | null;
   user?: { username: string; avatar_url: string };
 };

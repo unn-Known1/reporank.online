@@ -5,10 +5,10 @@ import { useRouter } from "next/navigation";
 
 const DIMENSIONS = [
   { key: "maintenance", label: "Maintenance" },
-  { key: "community", label: "Community" },
+  { key: "code_quality", label: "Code Quality" },
   { key: "security", label: "Security" },
-  { key: "documentation", label: "Documentation" },
-  { key: "adoption", label: "Adoption" },
+  { key: "docs", label: "Documentation" },
+  { key: "ease_of_use", label: "Ease of Use" },
 ];
 
 export default function ReviewForm({ repoId, owner, name }: { repoId: string; owner: string; name: string }) {
@@ -43,6 +43,11 @@ export default function ReviewForm({ repoId, owner, name }: { repoId: string; ow
 
       if (res.status === 401) {
         setError("Please sign in to submit a review.");
+        return;
+      }
+      if (res.status === 409) {
+        const body = await res.json().catch(() => ({}));
+        setError(body?.error || "You've already reviewed this repository");
         return;
       }
       if (res.status === 400) {

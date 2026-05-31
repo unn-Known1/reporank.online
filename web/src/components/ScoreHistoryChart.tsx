@@ -64,7 +64,10 @@ export default function ScoreHistoryChart({ owner, name }: Props) {
       })
       .then((json) => {
         if (!cancelled) {
-          const entries = json as HistoryEntry[];
+          const raw = json as any[];
+          const entries: HistoryEntry[] = Array.isArray(raw) ? raw.filter((e): e is HistoryEntry =>
+            e && typeof e.total_score === 'number' && typeof e.date === 'string'
+          ) : [];
           setData(entries);
           setLoading(false);
           setFetched(true);
